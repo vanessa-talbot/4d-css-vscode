@@ -1,0 +1,59 @@
+{
+  "name": "4d-css-language-support",
+  "displayName": "4D CSS Language Support",
+  "description": "Syntax highlighting, completion and diagnostics for 4D form CSS, driven by the 4D Forms JSON Schema.",
+  "version": "0.0.1",
+  "publisher": "4d",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages", "Linters"],
+  "activationEvents": ["onLanguage:4d-css"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "4d-css",
+        "aliases": ["4D CSS", "4D Form CSS"],
+        "extensions": [".4dcss"],
+        "filenames": ["styleSheets.css", "styleSheets_mac.css", "styleSheets_windows.css"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "4d-css",
+        "scopeName": "source.4dcss",
+        "path": "./syntaxes/4dcss.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "4D CSS",
+      "properties": {
+        "4dCss.schemaPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to a custom 4D Forms JSON Schema. Leave empty to use the bundled schema."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "4dCss.reloadSchema",
+        "title": "4D CSS: Reload Schema"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "package": "npm run compile && npx vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4",
+    "@vscode/vsce": "^3.1.0"
+  }
+}

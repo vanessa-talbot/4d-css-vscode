@@ -1,0 +1,88 @@
+/* Sample 4D style sheet used to exercise the extension diagnostics. */
+
+/* Object type selector, grouped */
+text,
+input {
+  text-align: left;
+  stroke: grey;
+}
+
+button {
+  text: "Click Me";
+  icon: url("/RESOURCES/Images/Buttons/click.png");
+  style:  regular;
+}
+
+/* Object name selector */
+#okButton {
+  fontFamily: Helvetica Neue;
+  fontSize: 20px;
+}
+
+/* Class selector, restricted to a type */
+text.center {
+  textAlign: center;
+  stroke: #FF0000;
+}
+
+/* Universal selector */
+* {
+  fill: rgb(255, 0, 0);
+}
+
+/* Attribute selectors */
+[borderStyle] {
+  stroke: purple;
+}
+
+text[text|=Hello] {
+  stroke: yellow;
+}
+
+/* Listbox inner objects */
+column {
+  rowHeightAuto: true;
+}
+
+header {
+  iconPlacement: left;
+}
+
+/* !important and picture paths */
+button {
+  text: Edit !important;
+  icon: url("/RESOURCES/Images/Buttons/edit.png");
+  style: bevel;
+}
+
+/* Media queries, including nesting */
+@media (form-theme: fluent-ui) {
+  .textLabel {
+    stroke: #2A2A2A;
+    fontSize: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .textLabel {
+      stroke: #E0E0E0;
+    }
+  }
+}
+
+/* Expected diagnostics below */
+button {
+  method: myMethod;        /* error: cannot be set from a style sheet */
+  rowCount: 3;             /* error: not a button attribute */
+  style: notAStyle;        /* warning: invalid enum value */
+  border-style: sunken;    /* warning: 4D specific value with a CSS name */
+}
+
+unknownType {              /* error: unknown object type */
+  stroke: red;
+}
+
+@media (color-scheme: dark) {  /* warning: unknown media feature */
+  * {
+    fill: nope#;               /* warning: invalid color */
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "4D CSS",
+  "scopeName": "source.4dcss",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#atRules"},
+    {"include": "#selectors"},
+    {"include": "#declarations"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {"name": "comment.block.4dcss", "begin": "/\\*", "end": "\\*/"},
+        {"name": "comment.line.4dcss", "match": "//.*$"}
+      ]
+    },
+    "atRules": {
+      "patterns": [
+        {"name": "keyword.control.at-rule.4dcss", "match": "@[a-zA-Z-]+"},
+        {"name": "support.type.property-name.media.4dcss", "match": "\\b(prefers-color-scheme|form-theme)\\b"},
+        {"name": "support.constant.media.4dcss", "match": "\\b(light|dark|fluent-ui|win-classic|liquid-glass|mac-classic)\\b"}
+      ]
+    },
+    "selectors": {
+      "patterns": [
+        {"name": "entity.name.tag.4dcss", "match": "\\b(button|checkbox|radio|input|text|line|rectangle|oval|groupBox|tab|picture|dropdown|combo|webArea|view|write|subform|plugin|splitter|buttonGrid|progress|ruler|spinner|stepper|list|pictureButton|picturePopup|listbox|column|header|footer)\\b"},
+        {"name": "variable.other.class.4dcss", "match": "\\.[a-zA-Z_][\\w-]*"},
+        {"name": "variable.other.name.4dcss", "match": "#[a-zA-Z_][\\w-]*"},
+        {"name": "entity.other.attribute-name.4dcss", "match": "\\[[^\\]]+\\]"},
+        {"name": "keyword.operator.selector.4dcss", "match": "[>+~*,]"}
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {"name": "keyword.other.important.4dcss", "match": "!\\s*important\\b"},
+        {"name": "support.function.url.4dcss", "match": "\\burl(?=\\()"},
+        {"name": "support.function.rgb.4dcss", "match": "\\brgba?(?=\\()"},
+        {"name": "support.type.property-name.4dcss", "match": "\\b[a-zA-Z_][\\w-]*(?=\\s*:)"},
+        {"name": "punctuation.separator.key-value.4dcss", "match": ":"},
+        {"name": "constant.numeric.4dcss", "match": "(?<![\\w-])[-+]?\\d+(?:\\.\\d+)?(?:px|em|pt|in|mm|cm|%)?\\b"},
+        {"name": "constant.other.color.4dcss", "match": "#[0-9a-fA-F]{3,8}\\b"},
+        {"name": "string.quoted.4dcss", "match": "(?:\"[^\"]*\"|'[^']*')"}
+      ]
+    }
+  }
+}
