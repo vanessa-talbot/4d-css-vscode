@@ -1,7 +1,7 @@
-# 4D CSS Language Support for VS Code
+# 4D Form & CSS Language Support for VS Code
 
-Editing support for 4D form style sheets, driven by the 4D Forms JSON Schema and the
-[4D style sheets documentation](https://developer.4d.com/docs/FormEditor/stylesheets).
+Editing support for 4D form style sheets and `.4DForm` files, driven by the 4D Forms JSON Schema and
+the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/stylesheets).
 
 ## Features
 
@@ -10,6 +10,10 @@ Editing support for 4D form style sheets, driven by the 4D Forms JSON Schema and
 - attribute and value completion scoped to the object type(s) of the current selector
 - hover documentation built from the schema `$comment` / `description`
 - diagnostics
+- `.4DForm` files are validated against the same JSON Schema: VS Code's built-in JSON support gives
+  base schema validation, and `src/formValidator.ts` adds 4D-specific checks (unknown attributes with
+  "did you mean" suggestions, unknown object types, enum/color/number value checks) plus property
+  and enum-value completion (also triggered by <kbd>Space</kbd>, like the CSS side)
 
 ### Supported selectors
 
@@ -51,6 +55,7 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 | `src/schema.ts` | reads the JSON Schema, resolves `$ref`/`allOf`/`oneOf`/`anyOf`, builds the type → attribute index |
 | `src/parser.ts` | CSS parser (rules, declarations, nested `@media`) keeping absolute offsets |
 | `src/validator.ts` | selector, attribute and value checks (no VS Code dependency) |
+| `src/formValidator.ts` | `.4DForm` (JSON) attribute and value checks, and completion helpers (no VS Code dependency) |
 | `src/extension.ts` | VS Code glue: diagnostics, completion, hover |
 
 ## Build

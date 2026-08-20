@@ -120,6 +120,53 @@ function sanitize(properties: Map<string, PropertyInfo>): Map<string, PropertyIn
   return properties;
 }
 
+export interface FormIndex {
+  /** Object type name (matches the JSON "type" attribute value) -> attribute name -> info. */
+  index: ObjectIndex;
+  /** "type" attribute value -> definition name, in case they ever differ. */
+  typeToDefinition: Map<string, string>;
+}
+
+/**
+ * Same as `buildIndex`, but keeps every attribute (including `type`, `method`, `events`, ...)
+ * since a `.4DForm` file can set them, unlike a style sheet.
+ */
+export function buildFormIndex(schema: unknown): FormIndex {
+  const root = schema as { definitions?: Record<string, SchemaNode> } & SchemaNode;
+  const definitions = root.definitions ?? {};
+  const index: ObjectIndex = new Map();
+  const typeToDefinition = new Map<string, string>();
+  const keep = new Set<string>();
+
+  for (const [name, node] of Object.entries(definitions)) {
+    if (name === 'types') continue;
+    const properties = collectProperties(node, definitions, new Set(), keep);
+    index.set(name, properties);
+    const type = properties.get('type');
+    if (type) for (const value of type.enums) typeToDefinition.set(value, name);
+  }
+
+  const listbox = definitions['listbox'];
+  const columns = listbox && findProperty(listbox, definitions, 'columns');
+  const column = columns && (Array.isArray(columns.items) ? columns.items[0] : columns.items);
+  if (column) {
+    const columnProperties = collectProperties(column, definitions, new Set(), keep);
+    columnProperties.delete('header');
+    columnProperties.delete('footer');
+    index.set('column', columnProperties);
+
+    for (const part of ['header', 'footer']) {
+      const node = findProperty(column, definitions, part);
+      if (node) index.set(part, collectProperties(node, definitions, new Set(), keep));
+    }
+  }
+  for (const subtype of LISTBOX_SUBTYPES) if (!index.has(subtype)) index.set(subtype, new Map());
+
+  index.set('form', collectProperties(root, definitions, new Set(), keep));
+
+  return { index, typeToDefinition };
+}
+
 /** Looks up a property declaration through `$ref`, `allOf`, `oneOf` and `anyOf`. */
 export function findProperty(
   node: SchemaNode,
@@ -162,7 +209,8 @@ function resolveRef(
 function collectProperties(
   node: SchemaNode,
   definitions: Record<string, SchemaNode>,
-  seen: Set<string>
+  seen: Set<string>,
+  exclude: Set<string> = FORBIDDEN_ATTRIBUTES
 ): Map<string, PropertyInfo> {
   const result = new Map<string, PropertyInfo>();
   const merge = (source: Map<string, PropertyInfo>) => {
@@ -182,11 +230,11 @@ function collectProperties(
   };
 
   const referenced = resolveRef(node, definitions, seen);
-  if (referenced) merge(collectProperties(referenced.node, definitions, referenced.seen));
+  if (referenced) merge(collectProperties(referenced.node, definitions, referenced.seen, exclude));
 
   if (node.properties) {
     for (const [name, property] of Object.entries(node.properties)) {
-      if (FORBIDDEN_ATTRIBUTES.has(name)) continue;
+      if (exclude.has(name)) continue;
       const facets = collectFacets(property, definitions, new Set());
       result.set(name, {
         name,
@@ -201,7 +249,7 @@ function collectProperties(
     }
   }
   for (const child of [...(node.allOf ?? []), ...(node.oneOf ?? []), ...(node.anyOf ?? [])]) {
-    merge(collectProperties(child, definitions, seen));
+    merge(collectProperties(child, definitions, seen, exclude));
   }
   return result;
 }

@@ -1,0 +1,191 @@
+/**
+ * Semantic checks and completion helpers for `.4DForm` JSON files: unknown attributes,
+ * unknown object types and value checks, driven by the same 4D Forms JSON Schema as the CSS side.
+ * No VS Code dependency, so it can be unit tested like `validator.ts`.
+ */
+
+import { Node, Segment, findNodeAtLocation, getLocation, getNodeValue, parseTree } from 'jsonc-parser';
+import { checkColor } from './validator';
+import { FormIndex, PropertyInfo } from './schema';
+
+export type Severity = 'error' | 'warning';
+
+export interface Issue {
+  message: string;
+  offset: number;
+  length: number;
+  severity: Severity;
+}
+
+const NUMERIC_TYPES = new Set(['integer', 'number']);
+
+/**
+ * Root-level attributes written by the 4D Form editor for its own use (view state, ...).
+ * Not part of the JSON Schema because they are meaningless at runtime, but not an error either.
+ */
+const EDITOR_ONLY_ATTRIBUTES = new Set(['editor']);
+
+export function validateForm(text: string, formIndex: FormIndex): Issue[] {
+  const issues: Issue[] = [];
+  const root = parseTree(text);
+  if (!root || root.type !== 'object') return issues;
+
+  validateObject(root, formIndex.index.get('form') ?? new Map(), issues, EDITOR_ONLY_ATTRIBUTES);
+
+  const pages = objectProperties(root).find(property => property.key === 'pages')?.valueNode;
+  for (const page of pages?.type === 'array' ? pages.children ?? [] : []) {
+    if (page.type !== 'object') continue;
+    const objects = objectProperties(page).find(property => property.key === 'objects')?.valueNode;
+    if (objects?.type !== 'object') continue;
+
+    for (const { valueNode: object } of objectProperties(objects)) {
+      if (object.type !== 'object') continue;
+      const typeProperty = objectProperties(object).find(property => property.key === 'type');
+      const typeValue = typeProperty && getNodeValue(typeProperty.valueNode);
+      const definition =
+        typeof typeValue === 'string'
+          ? formIndex.typeToDefinition.get(typeValue) ?? (formIndex.index.has(typeValue) ? typeValue : undefined)
+          : undefined;
+
+      if (typeProperty && !definition) {
+        issues.push({
+          message: `Unknown 4D object type "${typeValue}".`,
+          offset: typeProperty.valueNode.offset + 1,
+          length: Math.max(String(typeValue).length, 1),
+          severity: 'error'
+        });
+        continue;
+      }
+      if (definition) validateObject(object, formIndex.index.get(definition) ?? new Map(), issues);
+    }
+  }
+  return issues;
+}
+
+function validateObject(
+  node: Node,
+  allowed: Map<string, PropertyInfo>,
+  issues: Issue[],
+  ignore: Set<string> = new Set()
+): void {
+  for (const { key, keyNode, valueNode } of objectProperties(node)) {
+    if (ignore.has(key)) continue;
+    const info = allowed.get(key);
+    if (!info) {
+      const suggestion = closestKey(key, [...allowed.keys()]);
+      issues.push({
+        message: `Unknown 4D attribute "${key}".${suggestion ? ` Did you mean "${suggestion}"?` : ''}`,
+        offset: keyNode.offset + 1,
+        length: key.length,
+        severity: 'error'
+      });
+      continue;
+    }
+    if (valueNode.type === 'object' || valueNode.type === 'array') continue;
+    const message = checkFormValue(info, getNodeValue(valueNode));
+    if (message) issues.push({ message, offset: valueNode.offset, length: valueNode.length, severity: 'warning' });
+  }
+}
+
+export function checkFormValue(info: PropertyInfo, value: unknown): string | undefined {
+  if (info.refs.includes('picture')) return typeof value === 'string' ? undefined : 'Expected a picture path.';
+  if (info.refs.includes('color')) {
+    return typeof value === 'string' ? checkColor(value) : 'Expected a color.';
+  }
+  if (info.pattern && typeof value === 'string' && !new RegExp(info.pattern).test(value)) {
+    return `"${value}" does not match the expected format (${info.pattern}).`;
+  }
+  if (info.enums.length && !info.freeForm && (typeof value !== 'string' || !info.enums.includes(value))) {
+    return `Invalid value "${String(value)}". Expected one of: ${info.enums.join(', ')}.`;
+  }
+  if (info.enums.length) return undefined;
+
+  const numericOnly = info.types.length > 0 && info.types.every(type => NUMERIC_TYPES.has(type));
+  if (numericOnly) {
+    if (typeof value !== 'number') return `Expected a number, got "${String(value)}".`;
+    if (info.minimum !== undefined && value < info.minimum) {
+      return `${value} is lower than the minimum (${info.minimum}).`;
+    }
+    return undefined;
+  }
+  if (info.types.length === 1 && info.types[0] === 'boolean' && typeof value !== 'boolean') {
+    return `Expected true or false, got "${String(value)}".`;
+  }
+  return undefined;
+}
+
+export interface FormCompletion {
+  /** Missing property names for the object at the cursor. */
+  keys?: [string, PropertyInfo][];
+  /** Enum values for the property currently being typed. */
+  values?: { property: string; info: PropertyInfo };
+}
+
+export function formCompletions(text: string, offset: number, formIndex: FormIndex): FormCompletion {
+  const root = parseTree(text);
+  if (!root) return {};
+
+  const location = getLocation(text, offset);
+  const containingPath = location.isAtPropertyKey ? location.path : location.path.slice(0, -1);
+  const allowed = resolveAllowed(root, containingPath, formIndex);
+  if (!allowed) return {};
+
+  if (location.isAtPropertyKey) {
+    const containingNode = containingPath.length ? findNodeAtLocation(root, containingPath) : root;
+    const existing = new Set(objectProperties(containingNode ?? root).map(property => property.key));
+    return { keys: [...allowed].filter(([name]) => !existing.has(name)) };
+  }
+
+  const propertyName = location.path[location.path.length - 1];
+  const info = typeof propertyName === 'string' ? allowed.get(propertyName) : undefined;
+  return info?.enums.length ? { values: { property: propertyName as string, info } } : {};
+}
+
+function resolveAllowed(root: Node, path: Segment[], formIndex: FormIndex): Map<string, PropertyInfo> | undefined {
+  if (path.length === 0) return formIndex.index.get('form');
+  const typeNode = findNodeAtLocation(root, [...path, 'type']);
+  if (!typeNode) return undefined;
+  const typeValue = getNodeValue(typeNode);
+  if (typeof typeValue !== 'string') return undefined;
+  const definition = formIndex.typeToDefinition.get(typeValue) ?? (formIndex.index.has(typeValue) ? typeValue : undefined);
+  return definition ? formIndex.index.get(definition) : undefined;
+}
+
+function objectProperties(node: Node): { key: string; keyNode: Node; valueNode: Node }[] {
+  if (node.type !== 'object' || !node.children) return [];
+  return node.children
+    .map(property => ({
+      key: String(property.children?.[0]?.value ?? ''),
+      keyNode: property.children?.[0] as Node,
+      valueNode: property.children?.[1] as Node
+    }))
+    .filter(property => property.keyNode && property.valueNode);
+}
+
+function closestKey(input: string, candidates: string[]): string | undefined {
+  let best: string | undefined;
+  let bestDistance = Infinity;
+  for (const candidate of candidates) {
+    const distance = levenshtein(input, candidate);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return bestDistance <= Math.max(2, Math.floor(input.length / 2)) ? best : undefined;
+}
+
+function levenshtein(a: string, b: string): number {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const dp: number[][] = Array.from({ length: rows }, () => new Array<number>(cols).fill(0));
+  for (let i = 0; i < rows; i++) dp[i][0] = i;
+  for (let j = 0; j < cols; j++) dp[0][j] = j;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[rows - 1][cols - 1];
+}

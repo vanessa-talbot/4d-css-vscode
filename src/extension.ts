@@ -6,47 +6,131 @@ import { Rule, parseStylesheet, stripComments } from './parser';
 import {
   CSS_ALIASES,
   FORBIDDEN_ATTRIBUTES,
+  FormIndex,
   MEDIA_FEATURES,
   ObjectIndex,
   PropertyInfo,
+  buildFormIndex,
   buildIndex
 } from './schema';
 import { allowedProperties, analyzeSelector, validateStylesheet } from './validator';
+import { formCompletions, validateForm } from './formValidator';
 
 const LANGUAGE = '4d-css';
+const FORM_EXTENSION = /\.4dform$/i;
 
 let index: ObjectIndex = new Map();
+let formIndex: FormIndex = { index: new Map(), typeToDefinition: new Map() };
 let diagnostics: vscode.DiagnosticCollection;
+let formDiagnostics: vscode.DiagnosticCollection;
+
+function isFormDocument(document: vscode.TextDocument): boolean {
+  return FORM_EXTENSION.test(document.fileName);
+}
 
 export function activate(context: vscode.ExtensionContext) {
   diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE);
-  context.subscriptions.push(diagnostics);
+  formDiagnostics = vscode.languages.createDiagnosticCollection('4d-form');
+  context.subscriptions.push(diagnostics, formDiagnostics);
 
   const reload = () => {
     try {
-      index = buildIndex(JSON.parse(fs.readFileSync(schemaPath(context), 'utf8')));
-      for (const document of vscode.workspace.textDocuments) validate(document);
+      const schema = JSON.parse(fs.readFileSync(schemaPath(context), 'utf8'));
+      index = buildIndex(schema);
+      formIndex = buildFormIndex(schema);
+      for (const document of vscode.workspace.textDocuments) {
+        validate(document);
+        validateFormDocument(document);
+      }
     } catch (error) {
       vscode.window.showErrorMessage(`4D CSS: unable to load schema: ${String(error)}`);
     }
   };
   reload();
 
+  const validateAny = (document: vscode.TextDocument) => {
+    validate(document);
+    validateFormDocument(document);
+  };
+
   context.subscriptions.push(
     vscode.commands.registerCommand('4dCss.reloadSchema', reload),
-    vscode.workspace.onDidChangeTextDocument(event => validate(event.document)),
-    vscode.workspace.onDidOpenTextDocument(validate),
-    vscode.workspace.onDidCloseTextDocument(document => diagnostics.delete(document.uri)),
+    vscode.workspace.onDidChangeTextDocument(event => validateAny(event.document)),
+    vscode.workspace.onDidOpenTextDocument(validateAny),
+    vscode.workspace.onDidCloseTextDocument(document => {
+      diagnostics.delete(document.uri);
+      formDiagnostics.delete(document.uri);
+    }),
     vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('4dCss.schemaPath')) reload();
     }),
     vscode.languages.registerCompletionItemProvider(LANGUAGE, completionProvider, '.', '#', '[', ':', ' ', '('),
-    vscode.languages.registerHoverProvider(LANGUAGE, hoverProvider)
+    vscode.languages.registerHoverProvider(LANGUAGE, hoverProvider),
+    vscode.languages.registerCompletionItemProvider('json', formCompletionProvider, ' ', '"', ':')
   );
 }
 
+function validateFormDocument(document: vscode.TextDocument): void {
+  if (!isFormDocument(document)) return;
+  let issues: ReturnType<typeof validateForm> = [];
+  try {
+    issues = validateForm(document.getText(), formIndex);
+  } catch {
+    return;
+  }
+  formDiagnostics.set(
+    document.uri,
+    issues.map(item => {
+      const range = new vscode.Range(
+        document.positionAt(item.offset),
+        document.positionAt(item.offset + item.length)
+      );
+      const diagnostic = new vscode.Diagnostic(
+        range,
+        item.message,
+        item.severity === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
+      );
+      diagnostic.source = '4D Form';
+      return diagnostic;
+    })
+  );
+}
+
+const formCompletionProvider: vscode.CompletionItemProvider = {
+  provideCompletionItems(document, position) {
+    if (!isFormDocument(document)) return undefined;
+    const offset = document.offsetAt(position);
+    let result: ReturnType<typeof formCompletions>;
+    try {
+      result = formCompletions(document.getText(), offset, formIndex);
+    } catch {
+      return undefined;
+    }
+
+    if (result.keys) {
+      return result.keys.map(([name, info]) => {
+        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Property);
+        item.detail = '4D form attribute';
+        item.documentation = documentation(info);
+        item.insertText = new vscode.SnippetString(`"${name}": $0`);
+        return item;
+      });
+    }
+    if (result.values) {
+      return result.values.info.enums.map(value => {
+        const item = new vscode.CompletionItem(`"${value}"`, vscode.CompletionItemKind.Value);
+        item.insertText = `"${value}"`;
+        item.detail = `Value for ${result.values!.property}`;
+        return item;
+      });
+    }
+    return undefined;
+  }
+};
+
 export function deactivate() {
   diagnostics?.dispose();
+  formDiagnostics?.dispose();
 }
 
 function schemaPath(context: vscode.ExtensionContext): string {

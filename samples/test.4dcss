@@ -3,7 +3,7 @@
 /* Object type selector, grouped */
 text,
 input {
-  text-align: left;
+  text-align:  center;
   stroke: grey;
 }
 

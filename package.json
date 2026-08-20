@@ -1,24 +1,45 @@
 {
   "name": "4d-css-language-support",
-  "displayName": "4D CSS Language Support",
-  "description": "Syntax highlighting, completion and diagnostics for 4D form CSS, driven by the 4D Forms JSON Schema.",
-  "version": "0.0.1",
+  "displayName": "4D Form & CSS Language Support",
+  "description": "Syntax highlighting, completion and diagnostics for 4D form style sheets and .4DForm files, driven by the 4D Forms JSON Schema.",
+  "version": "0.1.0",
   "publisher": "4d",
   "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": ["Programming Languages", "Linters"],
-  "activationEvents": ["onLanguage:4d-css"],
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:4d-css",
+    "onLanguage:json"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "4d-css",
-        "aliases": ["4D CSS", "4D Form CSS"],
-        "extensions": [".4dcss"],
-        "filenames": ["styleSheets.css", "styleSheets_mac.css", "styleSheets_windows.css"],
+        "aliases": [
+          "4D CSS",
+          "4D Form CSS"
+        ],
+        "extensions": [
+          ".4dcss"
+        ],
+        "filenames": [
+          "styleSheets.css",
+          "styleSheets_mac.css",
+          "styleSheets_windows.css"
+        ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "json",
+        "extensions": [
+          ".4DForm"
+        ]
       }
     ],
     "grammars": [
@@ -26,6 +47,12 @@
         "language": "4d-css",
         "scopeName": "source.4dcss",
         "path": "./syntaxes/4dcss.tmLanguage.json"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "*.4DForm",
+        "url": "./schema/formsSchema.json"
       }
     ],
     "configuration": {
@@ -51,9 +78,12 @@
     "package": "npm run compile && npx vsce package"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
     "@types/node": "^20.14.0",
-    "typescript": "^5.5.4",
-    "@vscode/vsce": "^3.1.0"
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.1.0",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
   }
 }

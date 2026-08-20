@@ -316,7 +316,7 @@ export function checkValue(info: PropertyInfo, raw: string): string | undefined 
   return undefined;
 }
 
-function checkColor(value: string): string | undefined {
+export function checkColor(value: string): string | undefined {
   if (/^(transparent|automatic|automaticAlternate)$/i.test(value)) return undefined;
   if (/^#[0-9a-f]+$/i.test(value)) {
     return [4, 5, 7, 9].includes(value.length) ? undefined : `"${value}" is not a valid hexadecimal color.`;
