@@ -295,7 +295,8 @@
 					"style": "custom",
 					"borderStyle": "custom",
 					"class": "btnLightTealBackground btnTealBorder btnPill",
-					"focusable": false
+					"focusable": false,
+					"display": true
 				},
 				"Button10": {
 					"type": "button",
@@ -359,6 +360,15 @@
 					"width": 117,
 					"height": 17,
 					"fontTheme": "normal"
+				},
+				"Text": {
+					"type": "text",
+					"text": "text default",
+					"top": 28,
+					"left": 738,
+					"width": 16,
+					"height": 138,
+					"textAngle": 90
 				}
 			}
 		}

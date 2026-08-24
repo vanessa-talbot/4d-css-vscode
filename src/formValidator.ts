@@ -133,7 +133,7 @@ export function checkFormValue(info: PropertyInfo, value: unknown): string | und
   if (info.pattern && typeof value === 'string' && !new RegExp(info.pattern).test(value)) {
     return `"${value}" does not match the expected format (${info.pattern}).`;
   }
-  if (info.enums.length && !info.freeForm && (typeof value !== 'string' || !info.enums.includes(value))) {
+  if (info.enums.length && !info.freeForm && !info.enums.includes(String(value))) {
     return `Invalid value "${String(value)}". Expected one of: ${info.enums.join(', ')}.`;
   }
   if (info.enums.length) return undefined;
