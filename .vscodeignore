@@ -1,8 +1,11 @@
 .vscode/**
 .vscode-test/**
+.github/**
+samples/**
 src/**
 node_modules/**
 !node_modules/jsonc-parser/**
 *.ts
-*.map
+**/*.map
+tsconfig.json
 .gitignore

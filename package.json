@@ -3,8 +3,12 @@
   "displayName": "4D Form & CSS Language Support",
   "description": "Syntax highlighting, completion and diagnostics for 4D form style sheets and .4DForm files, driven by the 4D Forms JSON Schema.",
   "version": "0.1.0",
-  "publisher": "4d",
+  "publisher": "vanessa",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vanessa-talbot/4d-css-vscode.git"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
