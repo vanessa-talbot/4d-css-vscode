@@ -6,6 +6,7 @@
 
 import { Node, Segment, findNodeAtLocation, getLocation, getNodeValue, parseTree } from 'jsonc-parser';
 import { checkColor } from './validator';
+import { RefResolver } from './jsonRef';
 import { FormIndex, PropertyInfo } from './schema';
 
 export type Severity = 'error' | 'warning';
@@ -25,12 +26,12 @@ const NUMERIC_TYPES = new Set(['integer', 'number']);
  */
 const EDITOR_ONLY_ATTRIBUTES = new Set(['editor']);
 
-export function validateForm(text: string, formIndex: FormIndex): Issue[] {
+export function validateForm(text: string, formIndex: FormIndex, resolveRef?: RefResolver): Issue[] {
   const issues: Issue[] = [];
   const root = parseTree(text);
   if (!root || root.type !== 'object') return issues;
 
-  validateObject(root, formIndex.index.get('form') ?? new Map(), issues, EDITOR_ONLY_ATTRIBUTES);
+  validateObject(root, formIndex.index.get('form') ?? new Map(), issues, resolveRef, EDITOR_ONLY_ATTRIBUTES);
 
   const pages = objectProperties(root).find(property => property.key === 'pages')?.valueNode;
   for (const page of pages?.type === 'array' ? pages.children ?? [] : []) {
@@ -56,7 +57,7 @@ export function validateForm(text: string, formIndex: FormIndex): Issue[] {
         });
         continue;
       }
-      if (definition) validateObject(object, formIndex.index.get(definition) ?? new Map(), issues);
+      if (definition) validateObject(object, formIndex.index.get(definition) ?? new Map(), issues, resolveRef);
     }
   }
   return issues;
@@ -66,6 +67,7 @@ function validateObject(
   node: Node,
   allowed: Map<string, PropertyInfo>,
   issues: Issue[],
+  resolveRef?: RefResolver,
   ignore: Set<string> = new Set()
 ): void {
   for (const { key, keyNode, valueNode } of objectProperties(node)) {
@@ -81,9 +83,45 @@ function validateObject(
       });
       continue;
     }
-    if (valueNode.type === 'object' || valueNode.type === 'array') continue;
+    if (valueNode.type === 'object') {
+      validateRef(valueNode, info, issues, resolveRef);
+      continue;
+    }
+    if (valueNode.type === 'array') continue;
     const message = checkFormValue(info, getNodeValue(valueNode));
     if (message) issues.push({ message, offset: valueNode.offset, length: valueNode.length, severity: 'warning' });
+  }
+}
+
+/**
+ * `{ "$ref": "/SOURCES/tips.json#/Tip" }` stands for the value the pointer resolves to,
+ * so the attribute is checked against that value instead of the object literal.
+ */
+function validateRef(node: Node, info: PropertyInfo, issues: Issue[], resolveRef?: RefResolver): void {
+  const ref = objectProperties(node).find(property => property.key === '$ref');
+  if (!ref) return;
+
+  const target = getNodeValue(ref.valueNode);
+  if (typeof target !== 'string') {
+    issues.push({
+      message: 'A "$ref" value must be a string such as "/SOURCES/tips.json#/Tip".',
+      offset: ref.valueNode.offset,
+      length: ref.valueNode.length,
+      severity: 'error'
+    });
+    return;
+  }
+  if (!resolveRef) return;
+
+  const { value, error } = resolveRef(target);
+  const message = error ?? checkFormValue(info, value);
+  if (message) {
+    issues.push({
+      message: `"${info.name}" reference "${target}": ${message}`,
+      offset: ref.valueNode.offset,
+      length: ref.valueNode.length,
+      severity: 'warning'
+    });
   }
 }
 
@@ -110,6 +148,9 @@ export function checkFormValue(info: PropertyInfo, value: unknown): string | und
   }
   if (info.types.length === 1 && info.types[0] === 'boolean' && typeof value !== 'boolean') {
     return `Expected true or false, got "${String(value)}".`;
+  }
+  if (info.types.length === 1 && info.types[0] === 'string' && typeof value !== 'string') {
+    return `Expected a string, got "${String(value)}".`;
   }
   return undefined;
 }

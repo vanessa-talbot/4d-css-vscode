@@ -2,7 +2,7 @@
   "name": "4d-css-language-support",
   "displayName": "4D Form & CSS Language Support",
   "description": "Syntax highlighting, completion and diagnostics for 4D form style sheets and .4DForm files, driven by the 4D Forms JSON Schema.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "vanessa",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,9 @@
   ],
   "activationEvents": [
     "onLanguage:4d-css",
-    "onLanguage:json"
+    "onLanguage:json",
+    "onCommand:4dCss.validateWorkspace",
+    "onCommand:4dCss.reloadSchema"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -53,12 +55,6 @@
         "path": "./syntaxes/4dcss.tmLanguage.json"
       }
     ],
-    "jsonValidation": [
-      {
-        "fileMatch": "*.4DForm",
-        "url": "./schema/formsSchema.json"
-      }
-    ],
     "configuration": {
       "title": "4D CSS",
       "properties": {
@@ -73,6 +69,10 @@
       {
         "command": "4dCss.reloadSchema",
         "title": "4D CSS: Reload Schema"
+      },
+      {
+        "command": "4dCss.validateWorkspace",
+        "title": "4D CSS: Validate All Form and Style Sheet Files"
       }
     ]
   },

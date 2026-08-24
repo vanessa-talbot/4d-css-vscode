@@ -18,8 +18,7 @@
 		"onClick",
 		"onDoubleClick",
 		"onOutsideCall",
-		"onBeginDragOver",
-		"onDragOver",
+		"onBeginDragOver",	"onDragOver",
 		"onDrop",
 		"onAfterKeystroke",
 		"onMenuSelect",
@@ -52,7 +51,10 @@
 					"focusable": false,
 					"boror": "#00ACC1",
 					"borderFillColor": "#E0F7FA",
-					"borderRadius": 10
+					"borderRadius": 10,
+					"tooltip": {
+						"$ref": "tips.json#/Tip"
+					}
 				},
 				"Popup Dropdown List": {
 					"type": "dropdown",

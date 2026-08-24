@@ -74,3 +74,9 @@ Then press `F5` to launch an Extension Development Host and open `samples/test.4
 `schema/formsSchema.json` is the source of truth. Use the `4dCss.schemaPath` setting to point to
 another schema (absolute path, or relative to the first workspace folder), then run
 **4D CSS: Reload Schema**.
+
+## Commands
+
+- **4D CSS: Reload Schema** — reloads the JSON Schema and revalidates the open documents.
+- **4D CSS: Validate All Form and Style Sheet Files** — validates every `.4DForm`, `.4dcss` and
+  `styleSheets*.css` file of the workspace, including files that are not open.

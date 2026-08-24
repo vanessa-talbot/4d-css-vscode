@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as jsonc from 'jsonc-parser';
 
 import { Rule, parseStylesheet, stripComments } from './parser';
 import {
@@ -15,25 +16,42 @@ import {
 } from './schema';
 import { allowedProperties, analyzeSelector, validateStylesheet } from './validator';
 import { formCompletions, validateForm } from './formValidator';
+import { createRefResolver } from './jsonRef';
 
 const LANGUAGE = '4d-css';
 const FORM_EXTENSION = /\.4dform$/i;
+const CSS_FILE = /(\.4dcss|[\\/]styleSheets(_mac|_windows)?\.css)$/i;
+
+/** Files picked up by the "Validate Workspace" command. */
+const WORKSPACE_GLOBS = ['**/*.4DForm', '**/*.4dcss', '**/styleSheets*.css'];
+const WORKSPACE_EXCLUDE = '**/{node_modules,.git,Logs,Data}/**';
 
 let index: ObjectIndex = new Map();
 let formIndex: FormIndex = { index: new Map(), typeToDefinition: new Map() };
 let diagnostics: vscode.DiagnosticCollection;
 let formDiagnostics: vscode.DiagnosticCollection;
+/** Documents validated by the workspace scan: their diagnostics survive closing the document. */
+const scanned = new Set<string>();
 
 function isFormDocument(document: vscode.TextDocument): boolean {
   return FORM_EXTENSION.test(document.fileName);
 }
 
+function isCssDocument(document: vscode.TextDocument): boolean {
+  return document.languageId === LANGUAGE || CSS_FILE.test(document.fileName);
+}
+
 export function activate(context: vscode.ExtensionContext) {
   diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE);
   formDiagnostics = vscode.languages.createDiagnosticCollection('4d-form');
-  context.subscriptions.push(diagnostics, formDiagnostics);
+  context.subscriptions.push(
+    diagnostics,
+    formDiagnostics,
+    vscode.commands.registerCommand('4dCss.reloadSchema', reload),
+    vscode.commands.registerCommand('4dCss.validateWorkspace', validateWorkspace)
+  );
 
-  const reload = () => {
+  function reload(): void {
     try {
       const schema = JSON.parse(fs.readFileSync(schemaPath(context), 'utf8'));
       index = buildIndex(schema);
@@ -45,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
     } catch (error) {
       vscode.window.showErrorMessage(`4D CSS: unable to load schema: ${String(error)}`);
     }
-  };
+  }
   reload();
 
   const validateAny = (document: vscode.TextDocument) => {
@@ -54,10 +72,10 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('4dCss.reloadSchema', reload),
     vscode.workspace.onDidChangeTextDocument(event => validateAny(event.document)),
     vscode.workspace.onDidOpenTextDocument(validateAny),
     vscode.workspace.onDidCloseTextDocument(document => {
+      if (scanned.has(document.uri.toString())) return;
       diagnostics.delete(document.uri);
       formDiagnostics.delete(document.uri);
     }),
@@ -72,9 +90,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 function validateFormDocument(document: vscode.TextDocument): void {
   if (!isFormDocument(document)) return;
+  const text = document.getText();
   let issues: ReturnType<typeof validateForm> = [];
   try {
-    issues = validateForm(document.getText(), formIndex);
+    const resolver = createRefResolver(document.uri.fsPath, jsonc.parse(text));
+    issues = validateForm(text, formIndex, resolver);
   } catch {
     return;
   }
@@ -133,6 +153,56 @@ export function deactivate() {
   formDiagnostics?.dispose();
 }
 
+/** Validates every `.4DForm` and 4D style sheet of the workspace, including closed files. */
+async function validateWorkspace(): Promise<void> {
+  if (!vscode.workspace.workspaceFolders?.length) {
+    vscode.window.showWarningMessage('4D CSS: no folder is open.');
+    return;
+  }
+
+  const found = new Map<string, vscode.Uri>();
+  for (const glob of WORKSPACE_GLOBS) {
+    for (const uri of await vscode.workspace.findFiles(glob, WORKSPACE_EXCLUDE)) {
+      found.set(uri.toString(), uri);
+    }
+  }
+  if (!found.size) {
+    vscode.window.showInformationMessage('4D CSS: no .4DForm or 4D style sheet found in the workspace.');
+    return;
+  }
+
+  scanned.clear();
+  diagnostics.clear();
+  formDiagnostics.clear();
+
+  const problems = await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: '4D CSS: validating workspace…' },
+    async progress => {
+      let count = 0;
+      let done = 0;
+      for (const uri of found.values()) {
+        progress.report({ message: `${++done}/${found.size}`, increment: 100 / found.size });
+        let document: vscode.TextDocument;
+        try {
+          document = await vscode.workspace.openTextDocument(uri);
+        } catch {
+          continue;
+        }
+        scanned.add(uri.toString());
+        validate(document);
+        validateFormDocument(document);
+        count += (diagnostics.get(uri)?.length ?? 0) + (formDiagnostics.get(uri)?.length ?? 0);
+      }
+      return count;
+    }
+  );
+
+  vscode.window.showInformationMessage(
+    `4D CSS: ${found.size} file(s) validated, ${problems} problem(s) found.`
+  );
+  if (problems) vscode.commands.executeCommand('workbench.action.problems.focus');
+}
+
 function schemaPath(context: vscode.ExtensionContext): string {
   const configured = vscode.workspace.getConfiguration('4dCss').get<string>('schemaPath', '');
   if (configured) {
@@ -144,7 +214,7 @@ function schemaPath(context: vscode.ExtensionContext): string {
 }
 
 function validate(document: vscode.TextDocument): void {
-  if (document.languageId !== LANGUAGE) return;
+  if (!isCssDocument(document)) return;
   const sheet = parseStylesheet(document.getText());
   diagnostics.set(
     document.uri,
