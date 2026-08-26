@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as jsonc from 'jsonc-parser';
 
-import { Rule, parseStylesheet, stripComments } from './parser';
+import { Rule, parseStylesheet, splitSelectorList, stripComments } from './parser';
 import {
   CSS_ALIASES,
   FORBIDDEN_ATTRIBUTES,
@@ -17,6 +17,7 @@ import {
 import { allowedProperties, analyzeSelector, validateStylesheet } from './validator';
 import { formCompletions, validateForm } from './formValidator';
 import { createRefResolver } from './jsonRef';
+import { DocumentationViewProvider } from './docsView';
 
 const LANGUAGE = '4d-css';
 const FORM_EXTENSION = /\.4dform$/i;
@@ -30,6 +31,7 @@ let index: ObjectIndex = new Map();
 let formIndex: FormIndex = { index: new Map(), typeToDefinition: new Map() };
 let diagnostics: vscode.DiagnosticCollection;
 let formDiagnostics: vscode.DiagnosticCollection;
+let documentationView: DocumentationViewProvider;
 /** Documents validated by the workspace scan: their diagnostics survive closing the document. */
 const scanned = new Set<string>();
 
@@ -44,11 +46,14 @@ function isCssDocument(document: vscode.TextDocument): boolean {
 export function activate(context: vscode.ExtensionContext) {
   diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE);
   formDiagnostics = vscode.languages.createDiagnosticCollection('4d-form');
+  documentationView = new DocumentationViewProvider(index, insertPropertyAtCursor, insertMediaFeatureAtCursor);
   context.subscriptions.push(
     diagnostics,
     formDiagnostics,
     vscode.commands.registerCommand('4dCss.reloadSchema', reload),
-    vscode.commands.registerCommand('4dCss.validateWorkspace', validateWorkspace)
+    vscode.commands.registerCommand('4dCss.validateWorkspace', validateWorkspace),
+    vscode.commands.registerCommand('4dCss.showDocumentation', showDocumentation),
+    vscode.window.registerWebviewViewProvider(DocumentationViewProvider.viewType, documentationView)
   );
 
   function reload(): void {
@@ -56,6 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
       const schema = JSON.parse(fs.readFileSync(schemaPath(context), 'utf8'));
       index = buildIndex(schema);
       formIndex = buildFormIndex(schema);
+      documentationView.updateIndex(index);
+      updateDocumentationObjectType(vscode.window.activeTextEditor);
       for (const document of vscode.workspace.textDocuments) {
         validate(document);
         validateFormDocument(document);
@@ -69,10 +76,13 @@ export function activate(context: vscode.ExtensionContext) {
   const validateAny = (document: vscode.TextDocument) => {
     validate(document);
     validateFormDocument(document);
+    if (vscode.window.activeTextEditor?.document === document) updateDocumentationObjectType(vscode.window.activeTextEditor);
   };
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(event => validateAny(event.document)),
+    vscode.window.onDidChangeActiveTextEditor(updateDocumentationObjectType),
+    vscode.window.onDidChangeTextEditorSelection(event => updateDocumentationObjectType(event.textEditor)),
     vscode.workspace.onDidOpenTextDocument(validateAny),
     vscode.workspace.onDidCloseTextDocument(document => {
       if (scanned.has(document.uri.toString())) return;
@@ -85,6 +95,58 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCompletionItemProvider(LANGUAGE, completionProvider, '.', '#', '[', ':', ' ', '('),
     vscode.languages.registerHoverProvider(LANGUAGE, hoverProvider),
     vscode.languages.registerCompletionItemProvider('json', formCompletionProvider, ' ', '"', ':')
+  );
+}
+
+async function showDocumentation(): Promise<void> {
+  await vscode.commands.executeCommand('workbench.view.extension.4dCss');
+  await vscode.commands.executeCommand(`${DocumentationViewProvider.viewType}.focus`);
+}
+
+async function insertPropertyAtCursor(name: string): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || !isCssDocument(editor.document)) {
+    vscode.window.showWarningMessage('4D CSS: open a 4D style sheet to insert a property.');
+    return;
+  }
+
+  await editor.insertSnippet(new vscode.SnippetString(`${name}: $0;`));
+}
+
+async function insertMediaFeatureAtCursor(name: string, value: string): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || !isCssDocument(editor.document)) {
+    vscode.window.showWarningMessage('4D CSS: open a 4D style sheet to insert a media rule.');
+    return;
+  }
+
+  await editor.insertSnippet(new vscode.SnippetString(`@media (${name}: ${value}) {\n\t$0\n}`));
+}
+
+function updateDocumentationObjectType(editor: vscode.TextEditor | undefined): void {
+  documentationView.updateActiveObjectType(editor ? objectTypeAtCursor(editor) : undefined);
+}
+
+function objectTypeAtCursor(editor: vscode.TextEditor): string | undefined {
+  if (!isCssDocument(editor.document)) return undefined;
+
+  const offset = editor.document.offsetAt(editor.selection.active);
+  const rule = ruleAround(editor.document, offset);
+  if (!rule) return undefined;
+
+  for (const group of splitSelectorList(rule.selector, rule.selectorOffset)) {
+    const groupEnd = group.offset + group.text.length;
+    if (offset >= group.offset && offset <= groupEnd) {
+      return analyzeSelector(group.text, group.offset, index).types[0];
+    }
+  }
+
+  return analyzeSelector(rule.selector, rule.selectorOffset, index).types[0];
+}
+
+function ruleAround(document: vscode.TextDocument, offset: number): Rule | undefined {
+  return parseStylesheet(document.getText()).rules.find(
+    rule => offset >= rule.selectorOffset && offset <= rule.bodyEnd
   );
 }
 

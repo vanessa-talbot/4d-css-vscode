@@ -2,7 +2,7 @@
   "name": "4d-css-language-support",
   "displayName": "4D Form & CSS Language Support",
   "description": "Syntax highlighting, completion and diagnostics for 4D form style sheets and .4DForm files, driven by the 4D Forms JSON Schema.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "vanessa",
   "license": "MIT",
   "repository": {
@@ -15,12 +15,6 @@
   "categories": [
     "Programming Languages",
     "Linters"
-  ],
-  "activationEvents": [
-    "onLanguage:4d-css",
-    "onLanguage:json",
-    "onCommand:4dCss.validateWorkspace",
-    "onCommand:4dCss.reloadSchema"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -67,6 +61,10 @@
     },
     "commands": [
       {
+        "command": "4dCss.showDocumentation",
+        "title": "4D CSS: Show Reference"
+      },
+      {
         "command": "4dCss.reloadSchema",
         "title": "4D CSS: Reload Schema"
       },
@@ -74,7 +72,26 @@
         "command": "4dCss.validateWorkspace",
         "title": "4D CSS: Validate All Form and Style Sheet Files"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "4dCss",
+          "title": "4D CSS",
+          "icon": "./resources/4d-css.svg"
+        }
+      ]
+    },
+    "views": {
+      "4dCss": [
+        {
+          "type": "webview",
+          "id": "4dCss.documentation",
+          "name": "Reference",
+          "icon": "./resources/4d-css.svg"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p ./tsconfig.json",

@@ -9,6 +9,9 @@ the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/sty
 - syntax highlighting (selectors, attributes, `url()`, `rgb()`, `!important`, media features)
 - attribute and value completion scoped to the object type(s) of the current selector
 - hover documentation built from the schema `$comment` / `description`
+- **4D CSS: Reference** view with schema-driven object properties, selector reference and `@media`
+  reference. The object property list follows the current selector automatically and can insert
+  properties at the cursor; `@media` entries can insert a media block.
 - diagnostics
 - `.4DForm` files are validated against the same JSON Schema: VS Code's built-in JSON support gives
   base schema validation, and `src/formValidator.ts` adds 4D-specific checks (unknown attributes with
@@ -56,6 +59,7 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 | `src/parser.ts` | CSS parser (rules, declarations, nested `@media`) keeping absolute offsets |
 | `src/validator.ts` | selector, attribute and value checks (no VS Code dependency) |
 | `src/formValidator.ts` | `.4DForm` (JSON) attribute and value checks, and completion helpers (no VS Code dependency) |
+| `src/docsView.ts` | interactive 4D CSS reference view built from the schema and supported media features |
 | `src/extension.ts` | VS Code glue: diagnostics, completion, hover |
 
 ## Build
@@ -77,6 +81,8 @@ another schema (absolute path, or relative to the first workspace folder), then 
 
 ## Commands
 
+- **4D CSS: Show Reference** — opens the interactive reference view for object properties, selectors
+  and `@media` features.
 - **4D CSS: Reload Schema** — reloads the JSON Schema and revalidates the open documents.
 - **4D CSS: Validate All Form and Style Sheet Files** — validates every `.4DForm`, `.4dcss` and
   `styleSheets*.css` file of the workspace, including files that are not open.
