@@ -3,6 +3,10 @@
 Editing support for 4D form style sheets and `.4DForm` files, driven by the 4D Forms JSON Schema and
 the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/stylesheets).
 
+## Preview
+
+![4D CSS syntax highlighting, diagnostics, and contextual reference panel](docs/preview.png)
+
 ## Features
 
 - `4d-css` language mode for `.4dcss` files and for `styleSheets.css`, `styleSheets_mac.css`, `styleSheets_windows.css`
