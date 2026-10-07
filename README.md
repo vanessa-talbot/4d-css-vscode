@@ -7,6 +7,13 @@ the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/sty
 
 ![4D CSS syntax highlighting, diagnostics, and contextual reference panel](docs/preview.png)
 
+## Getting started
+
+1. Install the extension from the VS Code Marketplace.
+2. Open a 4D project folder: `.4DForm` files and `styleSheets*.css` / `.4dcss` files are recognized
+   automatically.
+3. Open the **4D CSS** view in the activity bar to browse the reference.
+
 ## Features
 
 - `4d-css` language mode for `.4dcss` files and for `styleSheets.css`, `styleSheets_mac.css`, `styleSheets_windows.css`
@@ -55,28 +62,6 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 - unknown object types, invalid attribute selectors and unsupported operators
 - unknown media features/values and unsupported at-rules
 
-## Source layout
-
-| File | Role |
-| --- | --- |
-| `src/schema.ts` | reads the JSON Schema, resolves `$ref`/`allOf`/`oneOf`/`anyOf`, builds the type → attribute index |
-| `src/parser.ts` | CSS parser (rules, declarations, nested `@media`) keeping absolute offsets |
-| `src/validator.ts` | selector, attribute and value checks (no VS Code dependency) |
-| `src/formValidator.ts` | `.4DForm` (JSON) attribute and value checks, and completion helpers (no VS Code dependency) |
-| `src/docsView.ts` | interactive 4D CSS reference view built from the schema and supported media features |
-| `src/extension.ts` | VS Code glue: diagnostics, completion, hover |
-
-## Build
-
-Requires Node.js.
-
-```bash
-npm install
-npm run compile
-```
-
-Then press `F5` to launch an Extension Development Host and open `samples/test.4dcss`.
-
 ## Schema
 
 `schema/formsSchema.json` is the source of truth. Use the `4dCss.schemaPath` setting to point to
@@ -90,3 +75,7 @@ another schema (absolute path, or relative to the first workspace folder), then 
 - **4D CSS: Reload Schema** — reloads the JSON Schema and revalidates the open documents.
 - **4D CSS: Validate All Form and Style Sheet Files** — validates every `.4DForm`, `.4dcss` and
   `styleSheets*.css` file of the workspace, including files that are not open.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout and build instructions.
