@@ -9,7 +9,8 @@ the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/sty
 
 ## Getting started
 
-1. Install the extension from the VS Code Marketplace.
+1. Install the extension from the
+   [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=vanessa-talbot.4d-css-language-support).
 2. Open a 4D project folder: `.4DForm` files and `styleSheets*.css` / `.4dcss` files are recognized
    automatically.
 3. Open the **4D CSS** view in the activity bar to browse the reference.
@@ -64,9 +65,10 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 
 ## Schema
 
-`schema/formsSchema.json` is the source of truth. Use the `4dCss.schemaPath` setting to point to
-another schema (absolute path, or relative to the first workspace folder), then run
-**4D CSS: Reload Schema**.
+`schema/formsSchema.json` is the source of truth. The bundled schema matches **4D 21 R5**.
+
+Use the `4dCss.schemaPath` setting to point to another schema (absolute path, or relative to the
+first workspace folder), then run **4D CSS: Reload Schema**.
 
 ## Commands
 

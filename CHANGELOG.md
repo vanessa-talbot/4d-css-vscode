@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-10-21
+
+- Updated the Forms schema to 4D 21 R5.
+
 ## 0.2.0 — 2026-08-26
 
 - **4D CSS: Reference** view in the activity bar: schema-driven object properties, selector reference

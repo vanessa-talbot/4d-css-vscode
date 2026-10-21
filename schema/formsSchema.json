@@ -249,7 +249,7 @@
 			"borderStyle": {
 				"properties": {
 					"borderStyle": {
-						"enum": ["system", "none", "solid", "dotted", "raised", "sunken", "double","custom"]
+						"enum": [ "system", "none", "solid", "dotted", "raised", "sunken", "double", "custom", "systemRounded" ]
 					}
 				}
 			},
@@ -399,6 +399,9 @@
 					"borderRadius": {
 						"type": "integer",
 						"minimum": 0
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -716,6 +719,9 @@
 					},
 					"writingTools": {
 						"type": "boolean"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -805,8 +811,7 @@
 						"enum": [ "none", "custom" ]
 					},
 					"imageHugsTitle": {
-						"type": "boolean",
-						"$comment": "When an object is focusable it is always tabable."
+						"type": "boolean"
 					},
 					"textAlign": {
 						"enum": [ "left", "center", "right" ]
@@ -1001,8 +1006,7 @@
 						"$ref": "#/definitions/types/color"
 					},
 					"imageHugsTitle": {
-						"type": "boolean",
-						"$comment": "When an object is focusable it is always tabable."
+						"type": "boolean"
 					},
 					"textAlign": {
 						"enum": [ "left", "center", "right" ]
@@ -1171,7 +1175,7 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["webArea"]
+						"enum": [ "webArea" ]
 					},
 					"dataSource": {
 						"type": "string",
@@ -1184,16 +1188,19 @@
 						"type": "string"
 					},
 					"contextMenu": {
-						"enum": ["automatic", "none"]
+						"enum": [ "automatic", "none" ]
 					},
 					"method": {
 						"type": "string"
 					},
 					"webEngine": {
-						"enum": ["embedded", "system"]
+						"enum": [ "embedded", "system" ]
 					},
 					"methodsAccessibility": {
-						"enum": ["all", "none"]
+						"enum": [ "all", "none" ]
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1208,7 +1215,7 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["view"]
+						"enum": [ "view" ]
 					},
 					"dataSource": {
 						"type": "string"
@@ -1221,6 +1228,9 @@
 					},
 					"withFormulaBar": {
 						"type": "boolean"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1329,6 +1339,9 @@
 					},
 					"writingTools": {
 						"type": "boolean"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1343,26 +1356,26 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["subform"]
+						"enum": [ "subform" ]
 					},
 					"dataSource": {
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["object", "text", "number", "integer", "boolean", "picture", "date", "time", "undefined"]
+						"enum": [ "object", "text", "number", "integer", "boolean", "picture", "date", "time", "undefined" ]
 					},
 					"focusable": {
 						"type": "boolean",
-						"$comment":"When an object is focusable it is always tabable."
+						"$comment": "When an object is focusable it is always tabable."
 					},
 					"hideFocusRing": {
 						"type": "boolean"
 					},
 					"scrollbarHorizontal": {
-						"enum": ["visible", "hidden"]
+						"enum": [ "visible", "hidden" ]
 					},
 					"scrollbarVertical": {
-						"enum": ["visible", "hidden"]
+						"enum": [ "visible", "hidden" ]
 					},
 					"method": {
 						"type": "string"
@@ -1378,7 +1391,7 @@
 						"$comment": "for list forms"
 					},
 					"selectionMode": {
-						"enum": ["multiple", "single", "none"],
+						"enum": [ "multiple", "single", "none" ],
 						"$comment": "for list forms"
 					},
 					"enterableInList": {
@@ -1390,16 +1403,19 @@
 						"$comment": "for list forms"
 					},
 					"doubleClickInRowAction": {
-						"enum": ["editSubrecord", "displaySubrecord"],
+						"enum": [ "editSubrecord", "displaySubrecord" ],
 						"$comment": "for list forms"
 					},
 					"doubleClickInEmptyAreaAction": {
-						"enum": ["addSubrecord"],
+						"enum": [ "addSubrecord" ],
 						"$comment": "for list forms"
 					},
 					"printFrame": {
-						"enum": ["fixedMultiple", "fixed", "variable"],
+						"enum": [ "fixedMultiple", "fixed", "variable" ],
 						"$comment": "for list forms"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1414,7 +1430,7 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["plugin"]
+						"enum": [ "plugin" ]
 					},
 					"pluginAreaKind": {
 						"type": "string"
@@ -1423,24 +1439,27 @@
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["integer", "text", "object", "number", "boolean", "picture", "date", "time", "undefined"]
+						"enum": [ "integer", "text", "object", "number", "boolean", "picture", "date", "time", "undefined" ]
 					},
 					"method": {
 						"type": "string"
 					},
 					"focusable": {
 						"type": "boolean",
-						"$comment":"When an object is focusable it is always tabable."
+						"$comment": "When an object is focusable it is always tabable."
 					},
 					"dragging": {
-						"enum": ["none", "automatic"]
+						"enum": [ "none", "automatic" ]
 					},
 					"dropping": {
-						"enum": ["none", "automatic"]
+						"enum": [ "none", "automatic" ]
 					},
 					"customProperties": {
-						"type": ["object","string"],
-						"$comment":"plugin specific properties, passed to plugin as a JSON string if an object, or as a binary buffer if a base64 encoded string."
+						"type": [ "object", "string" ],
+						"$comment": "plugin specific properties, passed to plugin as a JSON string if an object, or as a binary buffer if a base64 encoded string."
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1492,19 +1511,19 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["buttonGrid"]
+						"enum": [ "buttonGrid" ]
 					},
 					"dataSource": {
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["integer"]
+						"enum": [ "integer" ]
 					},
 					"method": {
 						"type": "string"
 					},
 					"action": {
-						"enum": ["gotoPage"]
+						"enum": [ "gotoPage" ]
 					},
 					"tooltip": {
 						"type": "string"
@@ -1516,6 +1535,9 @@
 					"columnCount": {
 						"type": "integer",
 						"minimum": 1
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1575,6 +1597,9 @@
 					},
 					"graduationStep": {
 						"type": "number"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1591,13 +1616,13 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["ruler"]
+						"enum": [ "ruler" ]
 					},
 					"dataSource": {
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["integer", "number", "date", "time"]
+						"enum": [ "integer", "number", "date", "time" ]
 					},
 					"method": {
 						"type": "string"
@@ -1607,7 +1632,7 @@
 					},
 					"focusable": {
 						"type": "boolean",
-						"$comment":"When an object is focusable it is always tabable."
+						"$comment": "When an object is focusable it is always tabable."
 					},
 					"enterable": {
 						"type": "boolean"
@@ -1622,7 +1647,7 @@
 						"type": "string"
 					},
 					"labelsPlacement": {
-						"enum": ["none", "bottom", "top", "right", "left"],
+						"enum": [ "none", "bottom", "top", "right", "left" ],
 						"$comment": "bottom is equivalent to right, top is equivalent to left. Actual placement depends on object orientation."
 					},
 					"stroke": {
@@ -1639,6 +1664,9 @@
 					},
 					"graduationStep": {
 						"type": "number"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				},
 				"required": ["max"]
@@ -1656,19 +1684,22 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["spinner"]
+						"enum": [ "spinner" ]
 					},
 					"dataSource": {
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["integer", "number", "date", "time"]
+						"enum": [ "integer", "number", "date", "time" ]
 					},
 					"method": {
 						"type": "string"
 					},
 					"tooltip": {
 						"type": "string"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1715,6 +1746,9 @@
 					},
 					"step": {
 						"type": "number"
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1729,13 +1763,13 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["list"]
+						"enum": [ "list" ]
 					},
 					"dataSource": {
 						"type": "string"
 					},
 					"dataSourceTypeHint": {
-						"enum": ["integer"]
+						"enum": [ "integer" ]
 					},
 					"method": {
 						"type": "string"
@@ -1745,7 +1779,7 @@
 					},
 					"focusable": {
 						"type": "boolean",
-						"$comment":"When an object is focusable it is always tabable."
+						"$comment": "When an object is focusable it is always tabable."
 					},
 					"hideFocusRing": {
 						"type": "boolean"
@@ -1754,7 +1788,7 @@
 						"type": "boolean"
 					},
 					"selectionMode": {
-						"enum": ["single", "multiple"]
+						"enum": [ "single", "multiple" ]
 					},
 					"entryFilter": {
 						"type": "string"
@@ -1763,16 +1797,19 @@
 						"$ref": "#/definitions/types/list"
 					},
 					"scrollbarHorizontal": {
-						"enum": ["visible", "hidden", "automatic"]
+						"enum": [ "visible", "hidden", "automatic" ]
 					},
 					"scrollbarVertical": {
-						"enum": ["visible", "hidden", "automatic"]
+						"enum": [ "visible", "hidden", "automatic" ]
 					},
 					"dragging": {
-						"enum": ["none", "custom"]
+						"enum": [ "none", "custom" ]
 					},
 					"dropping": {
-						"enum": ["none", "custom"]
+						"enum": [ "none", "custom" ]
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1838,6 +1875,9 @@
 					},
 					"dropping": {
 						"enum": [ "none", "custom" ]
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -1854,7 +1894,7 @@
 			"allOf": [{
 				"properties": {
 					"type": {
-						"enum": ["picturePopup"]
+						"enum": [ "picturePopup" ]
 					},
 					"dataSource": {
 						"type": "string"
@@ -1878,6 +1918,9 @@
 					"rowCount": {
 						"type": "integer",
 						"minimum": 1
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					}
 				}
 			}, {
@@ -2054,6 +2097,9 @@
 					"verticalPadding": {
 						"type": "integer",
 						"minimum": 0
+					},
+					"borderColor": {
+						"$ref": "#/definitions/types/color"
 					},
 					"columns": {
 						"type": "array",
