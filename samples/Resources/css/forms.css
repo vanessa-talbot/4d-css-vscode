@@ -1,0 +1,6 @@
+/* Shared style sheet, loaded by the forms listing "/RESOURCES/css/forms.css" in their "css" attribute. */
+
+.sectionTitle {
+  fontWeight: bold;
+  fontSize: 16px;
+}

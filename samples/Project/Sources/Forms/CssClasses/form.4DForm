@@ -1,0 +1,81 @@
+{
+	"$4d": {
+		"version": "1",
+		"kind": "form"
+	},
+	"windowTitle": "CSS classes",
+	"destination": "detailScreen",
+	"css": [
+		"/RESOURCES/css/forms.css",
+		{
+			"path": "form.css"
+		},
+		{
+			"path": "/RESOURCES/css/missing.css",
+			"media": "windows"
+		}
+	],
+	"pages": [
+		{
+			"objects": {}
+		},
+		{
+			"objects": {
+				"titleFromResources": {
+					"type": "text",
+					"text": "Class from /RESOURCES/css/forms.css",
+					"top": 20,
+					"left": 20,
+					"width": 300,
+					"height": 20,
+					"class": "sectionTitle macTitle"
+				},
+				"hintFromFormFolder": {
+					"type": "text",
+					"text": "Class from the form folder style sheet",
+					"top": 50,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "hint"
+				},
+				"buttonWithTypo": {
+					"type": "button",
+					"text": "Typo",
+					"top": 80,
+					"left": 20,
+					"width": 100,
+					"height": 26,
+					"class": "btnPil btnDefaultBackground"
+				},
+				"buttonWithUnknownClass": {
+					"type": "button",
+					"text": "Unknown",
+					"top": 80,
+					"left": 140,
+					"width": 100,
+					"height": 26,
+					"class": "btnFull primaryAction"
+				},
+				"listbox": {
+					"type": "listbox",
+					"top": 120,
+					"left": 20,
+					"width": 300,
+					"height": 150,
+					"columns": [
+						{
+							"name": "column1",
+							"class": "hint",
+							"header": {
+								"name": "header1",
+								"text": "Header",
+								"class": "sectionTitl"
+							}
+						}
+					]
+				}
+			}
+		}
+	]
+}

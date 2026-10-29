@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2 — 2026-10-29
+
+- `.4DForm` validation reports CSS classes (`"class"` attribute of objects, listbox columns, headers
+  and footers) that are not defined in `/SOURCES/styleSheets*.css` nor in the form `css` style sheets,
+  with a "did you mean" suggestion for typos.
+- `.4DForm` validation reports the paths of the form `css` attribute that do not lead to any file.
+- The extension now activates when a 4D project is opened, so `.4DForm` diagnostics show up without
+  running **Validate All** first.
+
 ## 0.2.1 — 2026-10-21
 
 - Updated the Forms schema to 4D 21 R5.

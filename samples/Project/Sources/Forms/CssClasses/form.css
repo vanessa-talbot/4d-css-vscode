@@ -1,0 +1,6 @@
+/* Form specific style sheet, referenced with a path relative to the form folder. */
+
+.hint {
+  stroke: #757575;
+  fontStyle: italic;
+}

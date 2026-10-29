@@ -51,7 +51,7 @@ export function resolvePointer(root: unknown, pointer: string): RefResolution {
 }
 
 /** Folder holding the project package (`<root>/Project/Sources/...`), starting from the form file. */
-function projectRoot(formPath: string): string | undefined {
+export function projectRoot(formPath: string): string | undefined {
   let directory = path.dirname(formPath);
   for (;;) {
     if (fs.existsSync(path.join(directory, 'Project', 'Sources'))) return directory;

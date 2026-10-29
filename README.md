@@ -26,9 +26,8 @@ the [4D style sheets documentation](https://developer.4d.com/docs/FormEditor/sty
   properties at the cursor; `@media` entries can insert a media block.
 - diagnostics
 - `.4DForm` files are validated against the same JSON Schema: VS Code's built-in JSON support gives
-  base schema validation, and `src/formValidator.ts` adds 4D-specific checks (unknown attributes with
-  "did you mean" suggestions, unknown object types, enum/color/number value checks) plus property
-  and enum-value completion (also triggered by <kbd>Space</kbd>, like the CSS side)
+  base schema validation, and the extension adds 4D-specific checks (see [Diagnostics](#diagnostics))
+  plus property and enum-value completion (also triggered by <kbd>Space</kbd>, like the CSS side)
 
 ### Supported selectors
 
@@ -53,7 +52,9 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 - `@media (prefers-color-scheme: light|dark)` and
   `@media (form-theme: fluent-ui|win-classic|liquid-glass|mac-classic)`, including nesting
 
-### Diagnostics
+## Diagnostics
+
+### Style sheets
 
 - attributes that can never be set from a style sheet: `method`, `type`, `class`, `event`,
   `choiceList`, `excludedList`, `labels`, `list`, `requiredList`
@@ -62,6 +63,23 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
 - 4D specific values used with a CSS attribute name (e.g. `border-style: sunken`)
 - unknown object types, invalid attribute selectors and unsupported operators
 - unknown media features/values and unsupported at-rules
+
+### Forms (`.4DForm`)
+
+- unknown attributes, with a "did you mean" suggestion
+- unknown object types
+- invalid enum values, colors, numbers, booleans and formats
+- `$ref` values (e.g. `/SOURCES/tips.json#/Tip`) whose file or JSON pointer cannot be resolved, or
+  whose target value is invalid for the attribute
+- CSS classes of the `class` attribute (objects, listbox columns, headers and footers) not declared
+  in any style sheet loaded by the form, with a "did you mean" suggestion for typos. The style
+  sheets taken into account are `/SOURCES/styleSheets.css`, `styleSheets_mac.css`,
+  `styleSheets_windows.css` and the ones listed in the form `css` attribute
+- paths of the form `css` attribute that do not lead to any file (relative to the form folder, or
+  starting with `/RESOURCES/` or `/SOURCES/`)
+
+Style sheet checks on forms need a 4D project layout (`<project>/Project/Sources/...`); they are
+skipped for a standalone `.4DForm` that loads no style sheet.
 
 ## Schema
 

@@ -17,6 +17,7 @@ import {
 import { allowedProperties, analyzeSelector, validateStylesheet } from './validator';
 import { formCompletions, validateForm } from './formValidator';
 import { createRefResolver } from './jsonRef';
+import { formClasses } from './cssClasses';
 import { DocumentationViewProvider } from './docsView';
 
 const LANGUAGE = '4d-css';
@@ -73,13 +74,24 @@ export function activate(context: vscode.ExtensionContext) {
   }
   reload();
 
+  /** Forms depend on the classes of the style sheets: revalidate the open ones when a sheet changes. */
+  const revalidateForms = () => {
+    for (const document of vscode.workspace.textDocuments) validateFormDocument(document);
+  };
+
   const validateAny = (document: vscode.TextDocument) => {
     validate(document);
     validateFormDocument(document);
+    if (/\.css$/i.test(document.fileName)) revalidateForms();
     if (vscode.window.activeTextEditor?.document === document) updateDocumentationObjectType(vscode.window.activeTextEditor);
   };
 
+  const styleSheetWatcher = vscode.workspace.createFileSystemWatcher('**/*.css');
   context.subscriptions.push(
+    styleSheetWatcher,
+    styleSheetWatcher.onDidCreate(revalidateForms),
+    styleSheetWatcher.onDidChange(revalidateForms),
+    styleSheetWatcher.onDidDelete(revalidateForms),
     vscode.workspace.onDidChangeTextDocument(event => validateAny(event.document)),
     vscode.window.onDidChangeActiveTextEditor(updateDocumentationObjectType),
     vscode.window.onDidChangeTextEditorSelection(event => updateDocumentationObjectType(event.textEditor)),
@@ -155,8 +167,9 @@ function validateFormDocument(document: vscode.TextDocument): void {
   const text = document.getText();
   let issues: ReturnType<typeof validateForm> = [];
   try {
-    const resolver = createRefResolver(document.uri.fsPath, jsonc.parse(text));
-    issues = validateForm(text, formIndex, resolver);
+    const form = jsonc.parse(text);
+    const resolver = createRefResolver(document.uri.fsPath, form);
+    issues = validateForm(text, formIndex, resolver, formClasses(document.uri.fsPath, form, readStyleSheet));
   } catch {
     return;
   }
@@ -176,6 +189,17 @@ function validateFormDocument(document: vscode.TextDocument): void {
       return diagnostic;
     })
   );
+}
+
+/** Contents of a style sheet, taken from its editor when open so that unsaved edits count. */
+function readStyleSheet(file: string): string | undefined {
+  const open = vscode.workspace.textDocuments.find(document => document.uri.fsPath === file);
+  if (open) return open.getText();
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    return undefined;
+  }
 }
 
 const formCompletionProvider: vscode.CompletionItemProvider = {

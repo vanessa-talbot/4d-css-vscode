@@ -20,7 +20,13 @@ npm install
 npm run compile
 ```
 
-Then press `F5` to launch an Extension Development Host and open `samples/test.4dcss`.
+Then press `F5` to launch an Extension Development Host on the `samples` folder, a minimal 4D project:
+
+- `test.4dcss`: style sheet diagnostics
+- `Project/Sources/Forms/Test`: unknown attributes and `$ref` resolution (`/SOURCES/tips.json`)
+- `Project/Sources/Forms/Buttons`: classes from `Project/Sources/styleSheets.css`, no errors expected
+- `Project/Sources/Forms/CssClasses`: CSS classes and `css` style sheet paths (from `/RESOURCES/css/`,
+  from the form folder), with a typo, an unknown class and a missing style sheet on purpose
 
 ## Packaging
 

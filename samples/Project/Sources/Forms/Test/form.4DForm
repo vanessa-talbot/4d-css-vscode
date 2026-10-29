@@ -53,8 +53,9 @@
 					"borderFillColor": "#E0F7FA",
 					"borderRadius": 10,
 					"tooltip": {
-						"$ref": "tips.json#/Tip"
-					}
+						"$ref": "/SOURCES/tips.json#/Tip"
+					},
+					"class": "btnDarkGreenBackground"
 				},
 				"Popup Dropdown List": {
 					"type": "dropdown",

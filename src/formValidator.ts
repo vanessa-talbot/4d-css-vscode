@@ -7,6 +7,7 @@
 import { Node, Segment, findNodeAtLocation, getLocation, getNodeValue, parseTree } from 'jsonc-parser';
 import { checkColor } from './validator';
 import { RefResolver } from './jsonRef';
+import type { FormClasses } from './cssClasses';
 import { FormIndex, PropertyInfo } from './schema';
 
 export type Severity = 'error' | 'warning';
@@ -26,10 +27,22 @@ const NUMERIC_TYPES = new Set(['integer', 'number']);
  */
 const EDITOR_ONLY_ATTRIBUTES = new Set(['editor']);
 
-export function validateForm(text: string, formIndex: FormIndex, resolveRef?: RefResolver): Issue[] {
+/**
+ * `styleSheets` describes the style sheets the form loads; when given, the paths of the "css"
+ * attribute must exist and every name of a "class" attribute must be declared in one of them.
+ */
+export function validateForm(
+  text: string,
+  formIndex: FormIndex,
+  resolveRef?: RefResolver,
+  styleSheets?: FormClasses
+): Issue[] {
   const issues: Issue[] = [];
   const root = parseTree(text);
   if (!root || root.type !== 'object') return issues;
+
+  const css = objectProperties(root).find(property => property.key === 'css')?.valueNode;
+  if (css && styleSheets?.missing.size) validateStyleSheetPaths(css, styleSheets.missing, issues);
 
   validateObject(root, formIndex.index.get('form') ?? new Map(), issues, resolveRef, EDITOR_ONLY_ATTRIBUTES);
 
@@ -59,8 +72,52 @@ export function validateForm(text: string, formIndex: FormIndex, resolveRef?: Re
       }
       if (definition) validateObject(object, formIndex.index.get(definition) ?? new Map(), issues, resolveRef);
     }
+    if (styleSheets) validateClasses(objects, text, styleSheets.classes, issues);
   }
   return issues;
+}
+
+/** Reports the paths of the form "css" attribute (string, `{ path }` or array of them) not found on disk. */
+function validateStyleSheetPaths(node: Node, missing: Set<string>, issues: Issue[]): void {
+  if (node.type === 'array') {
+    for (const child of node.children ?? []) validateStyleSheetPaths(child, missing, issues);
+    return;
+  }
+  const pathNode = node.type === 'object' ? objectProperties(node).find(property => property.key === 'path')?.valueNode : node;
+  const value = pathNode && getNodeValue(pathNode);
+  if (typeof value !== 'string' || !missing.has(value)) return;
+  issues.push({
+    message: `Style sheet "${value}" not found.`,
+    offset: pathNode!.offset,
+    length: pathNode!.length,
+    severity: 'error'
+  });
+}
+
+/** Checks the "class" attributes of `node` and its descendants (listbox columns, headers, footers). */
+function validateClasses(node: Node, text: string, classes: Set<string>, issues: Issue[]): void {
+  if (node.type === 'array') {
+    for (const child of node.children ?? []) validateClasses(child, text, classes, issues);
+    return;
+  }
+  for (const { key, valueNode } of objectProperties(node)) {
+    if (key !== 'class' || valueNode.type !== 'string') {
+      validateClasses(valueNode, text, classes, issues);
+      continue;
+    }
+    const raw = text.slice(valueNode.offset + 1, valueNode.offset + valueNode.length - 1);
+    for (const match of raw.matchAll(/\S+/g)) {
+      const name = match[0];
+      if (classes.has(name)) continue;
+      const suggestion = closestKey(name, [...classes]);
+      issues.push({
+        message: `CSS class "${name}" is not defined in the form style sheets.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`,
+        offset: valueNode.offset + 1 + (match.index ?? 0),
+        length: name.length,
+        severity: 'error'
+      });
+    }
+  }
 }
 
 function validateObject(

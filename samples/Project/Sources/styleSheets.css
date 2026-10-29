@@ -1,0 +1,63 @@
+/* Project style sheet, loaded by every form: defines the classes used by the Buttons form. */
+
+/* Shapes */
+button.btnClassic {
+  borderRadius: 4;
+}
+
+button.btnPill {
+  borderRadius: 13;
+}
+
+button.btnFull {
+  borderStyle: none;
+}
+
+button.btnSimpleBorder {
+  borderStyle: solid;
+}
+
+/* Backgrounds */
+.btnDefaultBackground {
+  fill: #FFFFFF;
+}
+
+.btnDarkGreenBackground {
+  fill: #2E7D32;
+}
+
+.btnLightGreenBackground {
+  fill: #E8F5E9;
+}
+
+.btnDarkOrangeBackground {
+  fill: #E65100;
+}
+
+.btnLightTealBackground {
+  fill: #E0F7FA;
+}
+
+/* Borders */
+.btnDefaultBorder {
+  borderStyle: solid;
+}
+
+.btnGreenBorder,
+.btnOrangeBorder,
+.btnTealBorder {
+  borderStyle: solid;
+}
+
+/* Text colors */
+.btnDefaultStroke {
+  stroke: #FFFFFF;
+}
+
+.btnGreenStroke {
+  stroke: #2E7D32;
+}
+
+.btnRedStroke {
+  stroke: #C62828;
+}

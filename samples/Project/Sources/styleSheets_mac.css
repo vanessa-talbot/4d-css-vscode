@@ -1,0 +1,6 @@
+/* Platform style sheet, loaded after styleSheets.css on macOS only. */
+
+.macTitle {
+  fontFamily: Helvetica Neue;
+  fontSize: 13px;
+}
