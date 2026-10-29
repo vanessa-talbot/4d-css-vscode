@@ -106,7 +106,10 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     vscode.languages.registerCompletionItemProvider(LANGUAGE, completionProvider, '.', '#', '[', ':', ' ', '('),
     vscode.languages.registerHoverProvider(LANGUAGE, hoverProvider),
-    vscode.languages.registerCompletionItemProvider('json', formCompletionProvider, ' ', '"', ':')
+    vscode.languages.registerCompletionItemProvider('json', formCompletionProvider, ' ', '"', ':'),
+    vscode.languages.registerCodeActionsProvider('json', formCodeActionProvider, {
+      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+    })
   );
 }
 
@@ -180,15 +183,109 @@ function validateFormDocument(document: vscode.TextDocument): void {
         document.positionAt(item.offset),
         document.positionAt(item.offset + item.length)
       );
-      const diagnostic = new vscode.Diagnostic(
-        range,
-        item.message,
-        item.severity === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
-      );
+      const diagnostic = new vscode.Diagnostic(range, item.message, SEVERITIES[item.severity]);
       diagnostic.source = '4D Form';
+      if (item.code) diagnostic.code = item.code;
+      if (item.related) {
+        const start = new vscode.Position(item.related.line, item.related.character);
+        diagnostic.relatedInformation = [
+          new vscode.DiagnosticRelatedInformation(
+            new vscode.Location(vscode.Uri.file(item.related.file), new vscode.Range(start, start.translate(0, item.related.length))),
+            item.related.message
+          )
+        ];
+      }
       return diagnostic;
     })
   );
+}
+
+const SEVERITIES = {
+  error: vscode.DiagnosticSeverity.Error,
+  warning: vscode.DiagnosticSeverity.Warning,
+  info: vscode.DiagnosticSeverity.Information
+};
+
+/** Form diagnostics fixed by removing the attribute from the form (the style sheet or sibling value then applies). */
+const REMOVABLE_ATTRIBUTE_CODES = new Set([
+  'cssOverride',
+  'cssDuplicate',
+  'inheritanceBlocked',
+  'inheritedDuplicate',
+  'fontThemeIgnored'
+]);
+
+/** Removals that leave the rendering unchanged, offered all at once for a file. */
+const SAFE_REMOVAL_CODES = new Set(['cssDuplicate', 'inheritedDuplicate', 'fontThemeIgnored']);
+
+/** Duplicates of a style sheet value: the attribute repeats what the cascade would give anyway. */
+const DUPLICATE_CODES = new Set(['cssDuplicate', 'inheritedDuplicate']);
+
+const formCodeActionProvider: vscode.CodeActionProvider = {
+  provideCodeActions(document, _range, context) {
+    if (!isFormDocument(document)) return undefined;
+    const text = document.getText();
+    const actions: vscode.CodeAction[] = [];
+    for (const diagnostic of context.diagnostics) {
+      if (!REMOVABLE_ATTRIBUTE_CODES.has(diagnosticCode(diagnostic))) continue;
+      const attribute = attributePath(document, text, diagnostic);
+      if (!attribute) continue;
+      const action = new vscode.CodeAction(
+        `Remove "${attribute[attribute.length - 1]}" from the form`,
+        vscode.CodeActionKind.QuickFix
+      );
+      action.diagnostics = [diagnostic];
+      action.edit = new vscode.WorkspaceEdit();
+      for (const change of jsonc.modify(text, attribute, undefined, {})) {
+        action.edit.replace(
+          document.uri,
+          new vscode.Range(document.positionAt(change.offset), document.positionAt(change.offset + change.length)),
+          change.content
+        );
+      }
+      action.isPreferred = SAFE_REMOVAL_CODES.has(diagnosticCode(diagnostic));
+      actions.push(action);
+    }
+
+    if (context.diagnostics.some(diagnostic => DUPLICATE_CODES.has(diagnosticCode(diagnostic)))) {
+      const duplicates = (formDiagnostics.get(document.uri) ?? []).filter(diagnostic =>
+        DUPLICATE_CODES.has(diagnosticCode(diagnostic))
+      );
+      const attributes = duplicates
+        .map(diagnostic => attributePath(document, text, diagnostic))
+        .filter((attribute): attribute is jsonc.JSONPath => attribute !== undefined);
+      if (attributes.length > 1) {
+        const action = new vscode.CodeAction(
+          `Remove the ${attributes.length} attributes repeating a style sheet value in this form`,
+          vscode.CodeActionKind.QuickFix
+        );
+        action.diagnostics = duplicates;
+        action.edit = new vscode.WorkspaceEdit();
+        action.edit.replace(document.uri, fullRange(document), removeAttributes(text, attributes));
+        actions.push(action);
+      }
+    }
+    return actions;
+  }
+};
+
+function diagnosticCode(diagnostic: vscode.Diagnostic): string {
+  return diagnostic.source === '4D Form' ? String(diagnostic.code) : '';
+}
+
+/** JSON path of the attribute whose key the diagnostic underlines. */
+function attributePath(document: vscode.TextDocument, text: string, diagnostic: vscode.Diagnostic): jsonc.JSONPath | undefined {
+  const location = jsonc.getLocation(text, document.offsetAt(diagnostic.range.start));
+  return location.isAtPropertyKey ? location.path : undefined;
+}
+
+/** Removes the attributes one after the other, so that the commas of neighbouring ones stay valid. */
+function removeAttributes(text: string, attributes: jsonc.JSONPath[]): string {
+  return attributes.reduce((current, attribute) => jsonc.applyEdits(current, jsonc.modify(current, attribute, undefined, {})), text);
+}
+
+function fullRange(document: vscode.TextDocument): vscode.Range {
+  return new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
 }
 
 /** Contents of a style sheet, taken from its editor when open so that unsaved edits count. */

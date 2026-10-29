@@ -77,6 +77,27 @@ Listbox inner objects `column`, `header` and `footer` are handled as object type
   `styleSheets_windows.css` and the ones listed in the form `css` attribute
 - paths of the form `css` attribute that do not lead to any file (relative to the form folder, or
   starting with `/RESOURCES/` or `/SOURCES/`)
+- style cascade (information level, with a quick fix removing the attribute from the form):
+  - an attribute written in the form JSON that overrides a style sheet declaration targeting the
+    object. As in the CSS 2.1 cascade, form attributes act like an inline `style` attribute: they win
+    over every rule that is not `!important`, whatever its specificity, even with a default value
+    such as `"stroke": "automatic"`
+  - an attribute written on a listbox column, header or footer that prevents it from inheriting the
+    value its listbox gets from a style sheet (`fontFamily`, `fontTheme`, `fontSize`, `stroke`,
+    `textAlign`, `verticalAlign`, `fontWeight`, `fontStyle`, `textDecoration`)
+  - a `fontTheme` set next to a `fontFamily` in the form, where `fontFamily` wins. Both set the font
+    and compete as a single attribute: a `fontFamily` in the form also overrides a `fontTheme` from a
+    style sheet, and the other way round
+
+  - an attribute that only repeats the style sheet value (or the value the listbox gets from a style
+    sheet): nothing shows today, but later changes to the style sheet would not apply. Values are
+    compared after normalization (`18` and `18px`, `#e65100`, `#E65100` and `rgb(230, 81, 0)`), and an
+    attribute counts as a duplicate only when every declaration it hides has the same value and one
+    of them applies on every platform and outside any `@media` block, so that removing it changes
+    nothing. A quick fix removes all the duplicates of the form at once
+
+  The message names the rule and links to it, including its `@media` block or platform if any.
+  Selectors made of a single compound (type, `#name`, `.class`, attribute) are taken into account.
 
 Style sheet checks on forms need a 4D project layout (`<project>/Project/Sources/...`); they are
 skipped for a standalone `.4DForm` that loads no style sheet.

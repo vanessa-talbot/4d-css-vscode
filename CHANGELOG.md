@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 — 2026-10-29
+
+- `.4DForm` validation reports, at information level, the attributes written in the form that
+  override a style sheet declaration targeting the object (form attributes win over every rule that
+  is not `!important`, even with a default value such as `"automatic"`), and the attributes of a
+  listbox column, header or footer that prevent it from inheriting the value its listbox gets from a
+  style sheet. `fontFamily` and `fontTheme` compete as a single font attribute, and a `fontTheme`
+  set next to a `fontFamily` in the form is reported as ignored. A quick fix removes the attribute
+  from the form.
+- Attributes that only repeat a style sheet value (strict duplicates: removing them changes nothing,
+  on any platform or media) are reported separately, with a quick fix removing all of them in the
+  form at once.
+
 ## 0.2.2 — 2026-10-29
 
 - `.4DForm` validation reports CSS classes (`"class"` attribute of objects, listbox columns, headers

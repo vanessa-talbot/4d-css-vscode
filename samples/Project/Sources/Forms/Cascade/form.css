@@ -1,0 +1,52 @@
+/* Form specific style sheet of the Cascade form: each rule is hidden, or not, by the form JSON. */
+
+.redText {
+  color: red;
+}
+
+.redImportant {
+  stroke: red !important;
+}
+
+#namedTitle {
+  fontSize: 18px;
+}
+
+.blueList {
+  stroke: #1565C0;
+  fontWeight: bold;
+  fontTheme: main;
+}
+
+.themedTitle {
+  fontTheme: main;
+}
+
+.arialText {
+  fontFamily: Arial;
+}
+
+.greenText {
+  stroke: #2e7d32;
+  fontSize: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .greenText {
+    stroke: #81C784;
+  }
+}
+
+.orangeText {
+  stroke: rgb(230, 81, 0);
+}
+
+column {
+  textAlign: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .darkPanel {
+    fill: #333333;
+  }
+}

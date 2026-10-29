@@ -8,13 +8,28 @@ import * as path from 'path';
 import { parseStylesheet } from './parser';
 import { projectRoot, refFileCandidates } from './jsonRef';
 
-/** Style sheets loaded for every form of the project; the platform ones are both kept. */
-const PROJECT_STYLE_SHEETS = ['styleSheets.css', 'styleSheets_mac.css', 'styleSheets_windows.css'];
+/** Style sheets loaded for every form of the project, with their platform; the platform ones are both kept. */
+const PROJECT_STYLE_SHEETS: [string, string?][] = [
+  ['styleSheets.css'],
+  ['styleSheets_mac.css', 'mac'],
+  ['styleSheets_windows.css', 'windows']
+];
+
+export interface StyleSheetSource {
+  file: string;
+  /** Path shown in messages: relative to the project folder when there is one. */
+  label: string;
+  text: string;
+  /** Only loaded on this platform ("mac" or "windows"). */
+  platform?: string;
+}
 
 export interface FormClasses {
   classes: Set<string>;
   /** Style sheets the classes were read from. */
   files: string[];
+  /** Contents of those style sheets, in loading order (lowest priority first). */
+  sheets: StyleSheetSource[];
   /** Paths of the form "css" attribute that do not lead to any file. */
   missing: Set<string>;
 }
@@ -30,27 +45,28 @@ export function formClasses(
   readFile: (file: string) => string | undefined
 ): FormClasses | undefined {
   const root = projectRoot(formPath);
-  const files: string[] = [];
+  const files = new Map<string, string | undefined>();
   const missing = new Set<string>();
   if (root) {
-    for (const name of PROJECT_STYLE_SHEETS) files.push(path.join(root, 'Project', 'Sources', name));
+    for (const [name, platform] of PROJECT_STYLE_SHEETS) files.set(path.join(root, 'Project', 'Sources', name), platform);
   }
   for (const sheet of formStyleSheets(form)) {
-    const found = styleSheetCandidates(formPath, sheet).find(candidate => fs.existsSync(candidate));
-    if (found) files.push(found);
-    else missing.add(sheet);
+    const found = styleSheetCandidates(formPath, sheet.path).find(candidate => fs.existsSync(candidate));
+    if (!found) missing.add(sheet.path);
+    else if (!files.has(found)) files.set(found, sheet.media);
   }
 
   const classes = new Set<string>();
-  const read: string[] = [];
-  for (const file of new Set(files)) {
+  const sheets: StyleSheetSource[] = [];
+  for (const [file, platform] of files) {
     const text = readFile(file);
     if (text === undefined) continue;
-    read.push(file);
+    const label = root ? path.relative(root, file).split(path.sep).join('/') : path.basename(file);
+    sheets.push({ file, label, text, platform });
     for (const name of styleSheetClasses(text)) classes.add(name);
   }
-  if (!root && !read.length && !missing.size) return undefined;
-  return { classes, files: read, missing };
+  if (!root && !sheets.length && !missing.size) return undefined;
+  return { classes, files: sheets.map(sheet => sheet.file), missing, sheets };
 }
 
 /** Class names used in the selectors of a style sheet (`.name`). */
@@ -64,12 +80,13 @@ export function styleSheetClasses(text: string): Set<string> {
   return classes;
 }
 
-/** Paths listed by the form "css" attribute: a string, `{ path, media }`, or an array of them. */
-function formStyleSheets(form: unknown): string[] {
+/** Style sheets listed by the form "css" attribute: a path, `{ path, media }`, or an array of them. */
+function formStyleSheets(form: unknown): { path: string; media?: string }[] {
   const css = form && typeof form === 'object' ? (form as Record<string, unknown>).css : undefined;
   return (Array.isArray(css) ? css : [css])
-    .map(item => (item && typeof item === 'object' ? (item as Record<string, unknown>).path : item))
-    .filter((item): item is string => typeof item === 'string' && item.length > 0);
+    .map((item): Record<string, unknown> => (item && typeof item === 'object' ? (item as Record<string, unknown>) : { path: item }))
+    .filter(entry => typeof entry.path === 'string' && entry.path.length > 0)
+    .map(entry => ({ path: entry.path as string, media: typeof entry.media === 'string' ? entry.media : undefined }));
 }
 
 /** A relative "css" path is resolved from the form folder, a "/RESOURCES/..." one from the project. */

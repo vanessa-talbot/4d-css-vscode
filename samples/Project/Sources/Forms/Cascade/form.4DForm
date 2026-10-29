@@ -1,0 +1,146 @@
+{
+	"$4d": {
+		"version": "1",
+		"kind": "form"
+	},
+	"windowTitle": "Style cascade",
+	"destination": "detailScreen",
+	"css": "form.css",
+	"pages": [
+		{
+			"objects": {}
+		},
+		{
+			"objects": {
+				"redTextHidden": {
+					"type": "text",
+					"text": "Not red: \"stroke\" in the form wins over .redText",
+					"top": 20,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "redText",
+					"stroke": "#000000"
+				},
+				"redTextAutomatic": {
+					"type": "text",
+					"text": "Not red either: \"automatic\" is a value too",
+					"top": 40,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "redText",
+					"stroke": "automatic"
+				},
+				"redImportant": {
+					"type": "text",
+					"text": "Red: !important wins over the form, nothing reported",
+					"top": 60,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "redImportant",
+					"stroke": "#000000"
+				},
+				"namedTitle": {
+					"type": "text",
+					"text": "fontSize in the form wins over #namedTitle",
+					"top": 80,
+					"left": 20,
+					"width": 300,
+					"height": 24,
+					"fontSize": 12
+				},
+				"themedTitle": {
+					"type": "text",
+					"text": "fontFamily in the form wins over the fontTheme of .themedTitle",
+					"top": 310,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "themedTitle",
+					"fontFamily": "Courier"
+				},
+				"arialText": {
+					"type": "text",
+					"text": "fontTheme in the form wins over the fontFamily of .arialText",
+					"top": 330,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "arialText",
+					"fontTheme": "additional"
+				},
+				"bothFonts": {
+					"type": "text",
+					"text": "fontTheme ignored: fontFamily is set too",
+					"top": 350,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"fontFamily": "Courier",
+					"fontTheme": "main"
+				},
+				"orangeDuplicate": {
+					"type": "text",
+					"text": "Duplicate: same orange as .orangeText, written differently",
+					"top": 370,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "orangeText",
+					"stroke": "#E65100"
+				},
+				"greenSizeDuplicate": {
+					"type": "text",
+					"text": "fontSize duplicates .greenText, stroke does not (dark mode differs)",
+					"top": 390,
+					"left": 20,
+					"width": 300,
+					"height": 16,
+					"class": "greenText",
+					"fontSize": 14,
+					"stroke": "#2E7D32"
+				},
+				"darkPanel": {
+					"type": "rectangle",
+					"top": 110,
+					"left": 20,
+					"width": 300,
+					"height": 30,
+					"class": "darkPanel",
+					"fill": "#FFFFFF"
+				},
+				"listbox": {
+					"type": "listbox",
+					"top": 150,
+					"left": 20,
+					"width": 300,
+					"height": 150,
+					"class": "blueList",
+					"columns": [
+						{
+							"name": "columnBlocked",
+							"fontFamily": "Courier",
+							"stroke": "automatic",
+							"textAlign": "left",
+							"header": {
+								"name": "headerBlocked",
+								"text": "Not bold",
+								"fontWeight": "normal"
+							}
+						},
+						{
+							"name": "columnInheriting",
+							"fontWeight": "bold",
+							"header": {
+								"name": "headerInheriting",
+								"text": "Blue and bold"
+							}
+						}
+					]
+				}
+			}
+		}
+	]
+}

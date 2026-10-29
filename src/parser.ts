@@ -17,6 +17,8 @@ export interface Rule {
   bodyStart: number;
   bodyEnd: number;
   declarations: Declaration[];
+  /** Preludes of the enclosing at-rules, outermost first (e.g. `@media (prefers-color-scheme: dark)`). */
+  conditions: string[];
 }
 
 export interface AtRule {
@@ -88,7 +90,7 @@ export function parseStylesheet(source: string): Stylesheet {
   return sheet;
 }
 
-function parseBlock(text: string, start: number, end: number, sheet: Stylesheet): void {
+function parseBlock(text: string, start: number, end: number, sheet: Stylesheet, conditions: string[] = []): void {
   let i = start;
   while (i < end) {
     while (i < end && /\s/.test(text[i])) i++;
@@ -122,14 +124,15 @@ function parseBlock(text: string, start: number, end: number, sheet: Stylesheet)
       const name = trimmed.slice(1).split(/[\s({]/, 1)[0];
       const preludeOffset = preludeStart + prelude.indexOf(trimmed);
       sheet.atRules.push({ name, prelude: trimmed, preludeOffset });
-      parseBlock(text, bodyStart, bodyEnd, sheet);
+      parseBlock(text, bodyStart, bodyEnd, sheet, [...conditions, trimmed]);
     } else {
       sheet.rules.push({
         selector: trimmed,
         selectorOffset: preludeStart + prelude.indexOf(trimmed),
         bodyStart,
         bodyEnd,
-        declarations: parseDeclarations(text, bodyStart, bodyEnd)
+        declarations: parseDeclarations(text, bodyStart, bodyEnd),
+        conditions
       });
     }
     i = bodyEnd + 1;

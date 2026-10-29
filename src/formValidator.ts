@@ -8,15 +8,20 @@ import { Node, Segment, findNodeAtLocation, getLocation, getNodeValue, parseTree
 import { checkColor } from './validator';
 import { RefResolver } from './jsonRef';
 import type { FormClasses } from './cssClasses';
+import { cascadeIssues } from './cascade';
 import { FormIndex, PropertyInfo } from './schema';
 
-export type Severity = 'error' | 'warning';
+export type Severity = 'error' | 'warning' | 'info';
 
 export interface Issue {
   message: string;
   offset: number;
   length: number;
   severity: Severity;
+  /** Identifies the issues a quick fix can handle. */
+  code?: string;
+  /** Location in another file (0-based line and character) explaining the issue. */
+  related?: { file: string; line: number; character: number; length: number; message: string };
 }
 
 const NUMERIC_TYPES = new Set(['integer', 'number']);
@@ -29,7 +34,8 @@ const EDITOR_ONLY_ATTRIBUTES = new Set(['editor']);
 
 /**
  * `styleSheets` describes the style sheets the form loads; when given, the paths of the "css"
- * attribute must exist and every name of a "class" attribute must be declared in one of them.
+ * attribute must exist, every name of a "class" attribute must be declared in one of them, and
+ * the form attributes that keep a style sheet value from applying are reported.
  */
 export function validateForm(
   text: string,
@@ -72,7 +78,10 @@ export function validateForm(
       }
       if (definition) validateObject(object, formIndex.index.get(definition) ?? new Map(), issues, resolveRef);
     }
-    if (styleSheets) validateClasses(objects, text, styleSheets.classes, issues);
+    if (styleSheets) {
+      validateClasses(objects, text, styleSheets.classes, issues);
+      issues.push(...cascadeIssues(objects, styleSheets.sheets));
+    }
   }
   return issues;
 }
