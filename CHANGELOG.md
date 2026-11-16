@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 — 2026-11-16
+
+- `.4DForm` files and 4D style sheets created or modified on disk without an editor (by a script or
+  an AI agent) are validated without having to be opened, so that an agent can read their problems
+  back. Setting `4dCss.validateOnDiskChange` (on by default).
+- `.4DForm` validation reports the picture paths of the `icon`, `customBackgroundPicture` and
+  `picture` attributes that do not lead to any file (relative to the form folder, or starting with
+  `/RESOURCES/` or `/SOURCES/`). Picture variables (`var:...`) are not checked.
+- `left`, `top`, `width` and `height`, which the 4D form editor always writes in the form JSON, are
+  handled apart: a style sheet declaring them without `!important` gets a warning with an "Add
+  !important" quick fix, and in `.4DForm` files the cascade check no longer offers to remove these
+  attributes from the form (the editor writes them again) but to declare the style sheet value
+  `!important`.
+
 ## 0.3.0 — 2026-10-29
 
 - `.4DForm` validation reports, at information level, the attributes written in the form that

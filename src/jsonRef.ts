@@ -82,6 +82,12 @@ export function refFileCandidates(formPath: string, file: string): string[] {
   return [...new Set(candidates)];
 }
 
+/** Path of a form attribute ("css", pictures): a relative one is resolved from the form folder, a "/RESOURCES/..." one from the project. */
+export function formFileCandidates(formPath: string, file: string): string[] {
+  if (file.startsWith('/')) return refFileCandidates(formPath, file);
+  return [path.resolve(path.dirname(formPath), file), ...refFileCandidates(formPath, file)];
+}
+
 /**
  * Builds a resolver for `formPath`. `localRoot` is the parsed form itself, used by
  * pointer-only references (`#/pages/0/...`). Parsed files are cached for the caller's lifetime.

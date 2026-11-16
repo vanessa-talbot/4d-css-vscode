@@ -111,6 +111,24 @@
 					"class": "darkPanel",
 					"fill": "#FFFFFF"
 				},
+				"wideHidden": {
+					"type": "button",
+					"text": "300 wide: the form editor always writes width and height",
+					"top": 340,
+					"left": 20,
+					"width": 300,
+					"height": 22,
+					"class": "wideButton"
+				},
+				"wideImportant": {
+					"type": "button",
+					"text": "400 wide: !important wins over the form, nothing reported",
+					"top": 370,
+					"left": 20,
+					"width": 300,
+					"height": 22,
+					"class": "wideImportant"
+				},
 				"listbox": {
 					"type": "listbox",
 					"top": 150,

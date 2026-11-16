@@ -6,6 +6,7 @@ import { ParseIssue, Stylesheet, splitSelectorList } from './parser';
 import {
   CSS_ALIASES,
   CSS_ALIAS_VALUES,
+  EDITOR_GEOMETRY,
   FORBIDDEN_ATTRIBUTES,
   MEDIA_FEATURES,
   ObjectIndex,
@@ -16,6 +17,8 @@ export type Severity = 'error' | 'warning';
 
 export interface Issue extends ParseIssue {
   severity: Severity;
+  /** Identifies the issues a quick fix can handle. */
+  code?: string;
 }
 
 const UNITS = /^[-+]?\d+(?:\.\d+)?(?:px|em|pt|%|in|mm|cm)?$/;
@@ -32,7 +35,20 @@ export function validateStylesheet(sheet: Stylesheet, index: ObjectIndex): Issue
 
     const allowed = allowedProperties(index, selector.types);
     for (const declaration of rule.declarations) {
-      issues.push(...validateDeclaration(declaration, allowed, selector.types));
+      const found = validateDeclaration(declaration, allowed, selector.types);
+      issues.push(...found);
+      if (!found.length && EDITOR_GEOMETRY.has(declaration.property) && !declaration.important) {
+        const { property, propertyOffset, value, valueOffset } = declaration;
+        issues.push({
+          message:
+            `"${property}" is written by the 4D form editor for every object and wins over style sheets: ` +
+            `declare "${property}: ${value} !important" for this value to apply.`,
+          offset: propertyOffset,
+          length: valueOffset + value.length - propertyOffset,
+          severity: 'warning',
+          code: 'geometryNotImportant'
+        });
+      }
     }
   }
   return issues;

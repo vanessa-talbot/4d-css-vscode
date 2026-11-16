@@ -9,7 +9,7 @@
 
 import { Node, getNodeValue } from 'jsonc-parser';
 import { parseStylesheet, splitSelectorList } from './parser';
-import { CSS_ALIASES, FORBIDDEN_ATTRIBUTES } from './schema';
+import { CSS_ALIASES, EDITOR_GEOMETRY, FORBIDDEN_ATTRIBUTES } from './schema';
 import type { StyleSheetSource } from './cssClasses';
 import type { Issue } from './formValidator';
 
@@ -113,6 +113,20 @@ export function cascadeIssues(objects: Node, sheets: StyleSheetSource[]): Issue[
       const winner = hidden.reduce((best, candidate) => (compare(candidate, best) > 0 ? candidate : best));
       const others = hidden.length - 1;
       const andOthers = others ? ` (and ${others} other declaration${others > 1 ? 's' : ''})` : '';
+      if (EDITOR_GEOMETRY.has(key)) {
+        // Removing the attribute is pointless: the form editor writes it again on the next save.
+        issues.push({
+          message:
+            `"${winner.source}" from ${describe(winner)}${andOthers} does not apply: the 4D form editor always ` +
+            `writes "${key}" in the form, so the style sheet value must be declared !important.`,
+          offset: keyNode.offset + 1,
+          length: key.length,
+          severity: 'info',
+          code: 'geometryOverride',
+          related: related(winner, 'Declaration to make !important')
+        });
+        continue;
+      }
       const duplicate = repeats(key, element.values[key], hidden);
       issues.push({
         message: duplicate

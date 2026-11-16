@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseStylesheet } from './parser';
-import { projectRoot, refFileCandidates } from './jsonRef';
+import { formFileCandidates, projectRoot } from './jsonRef';
 
 /** Style sheets loaded for every form of the project, with their platform; the platform ones are both kept. */
 const PROJECT_STYLE_SHEETS: [string, string?][] = [
@@ -51,7 +51,7 @@ export function formClasses(
     for (const [name, platform] of PROJECT_STYLE_SHEETS) files.set(path.join(root, 'Project', 'Sources', name), platform);
   }
   for (const sheet of formStyleSheets(form)) {
-    const found = styleSheetCandidates(formPath, sheet.path).find(candidate => fs.existsSync(candidate));
+    const found = formFileCandidates(formPath, sheet.path).find(candidate => fs.existsSync(candidate));
     if (!found) missing.add(sheet.path);
     else if (!files.has(found)) files.set(found, sheet.media);
   }
@@ -89,8 +89,3 @@ function formStyleSheets(form: unknown): { path: string; media?: string }[] {
     .map(entry => ({ path: entry.path as string, media: typeof entry.media === 'string' ? entry.media : undefined }));
 }
 
-/** A relative "css" path is resolved from the form folder, a "/RESOURCES/..." one from the project. */
-function styleSheetCandidates(formPath: string, file: string): string[] {
-  if (file.startsWith('/')) return refFileCandidates(formPath, file);
-  return [path.resolve(path.dirname(formPath), file), ...refFileCandidates(formPath, file)];
-}

@@ -32,16 +32,22 @@ const NUMERIC_TYPES = new Set(['integer', 'number']);
  */
 const EDITOR_ONLY_ATTRIBUTES = new Set(['editor']);
 
+/** Attributes holding a picture path, at any depth (objects, listbox headers, tree items). */
+const PICTURE_ATTRIBUTES = new Set(['icon', 'customBackgroundPicture', 'picture']);
+
 /**
  * `styleSheets` describes the style sheets the form loads; when given, the paths of the "css"
  * attribute must exist, every name of a "class" attribute must be declared in one of them, and
  * the form attributes that keep a style sheet value from applying are reported.
+ * `pictureExists` tells whether a picture path leads to a file; when given, the paths of the
+ * picture attributes that do not are reported.
  */
 export function validateForm(
   text: string,
   formIndex: FormIndex,
   resolveRef?: RefResolver,
-  styleSheets?: FormClasses
+  styleSheets?: FormClasses,
+  pictureExists?: (picture: string) => boolean
 ): Issue[] {
   const issues: Issue[] = [];
   const root = parseTree(text);
@@ -49,6 +55,8 @@ export function validateForm(
 
   const css = objectProperties(root).find(property => property.key === 'css')?.valueNode;
   if (css && styleSheets?.missing.size) validateStyleSheetPaths(css, styleSheets.missing, issues);
+
+  if (pictureExists) validatePicturePaths(root, pictureExists, issues);
 
   validateObject(root, formIndex.index.get('form') ?? new Map(), issues, resolveRef, EDITOR_ONLY_ATTRIBUTES);
 
@@ -101,6 +109,31 @@ function validateStyleSheetPaths(node: Node, missing: Set<string>, issues: Issue
     length: pathNode!.length,
     severity: 'error'
   });
+}
+
+/**
+ * Reports the picture attributes of `node` and its descendants whose path does not lead to any file.
+ * Values with a prefix such as "var:" (picture variable) do not name a file and are skipped.
+ */
+function validatePicturePaths(node: Node, exists: (picture: string) => boolean, issues: Issue[]): void {
+  if (node.type === 'array') {
+    for (const child of node.children ?? []) validatePicturePaths(child, exists, issues);
+    return;
+  }
+  for (const { key, valueNode } of objectProperties(node)) {
+    if (!PICTURE_ATTRIBUTES.has(key) || valueNode.type !== 'string') {
+      validatePicturePaths(valueNode, exists, issues);
+      continue;
+    }
+    const value = valueNode.value as string;
+    if (!value || /^[a-z][\w-]*:(?![\\/])/i.test(value) || exists(value)) continue;
+    issues.push({
+      message: `Picture "${value}" not found.`,
+      offset: valueNode.offset,
+      length: valueNode.length,
+      severity: 'error'
+    });
+  }
 }
 
 /** Checks the "class" attributes of `node` and its descendants (listbox columns, headers, footers). */

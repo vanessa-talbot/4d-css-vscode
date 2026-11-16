@@ -11,3 +11,4 @@ tsconfig.json
 .gitignore
 CONTRIBUTING.md
 resources/icon.svg
+test/**

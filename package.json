@@ -2,7 +2,7 @@
   "name": "4d-css-language-support",
   "displayName": "4D Form & CSS Language Support",
   "description": "Syntax highlighting, completion and diagnostics for 4D form style sheets and .4DForm files, driven by the 4D Forms JSON Schema.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "vanessa-talbot",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -73,6 +73,11 @@
           "type": "string",
           "default": "",
           "description": "Optional path to a custom 4D Forms JSON Schema. Leave empty to use the bundled schema."
+        },
+        "4dCss.validateOnDiskChange": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate .4DForm files and 4D style sheets created or modified on disk (by a script or an AI agent, for example), even when they are not open in an editor."
         }
       }
     },
@@ -113,7 +118,8 @@
   "scripts": {
     "compile": "tsc -p ./tsconfig.json",
     "watch": "tsc -watch -p ./tsconfig.json",
-    "package": "npm run compile && npx vsce package"
+    "package": "npm run compile && npx vsce package",
+    "test": "npm run compile && node test/samples.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

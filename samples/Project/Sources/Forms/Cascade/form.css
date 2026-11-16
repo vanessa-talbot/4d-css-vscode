@@ -50,3 +50,13 @@ column {
     fill: #333333;
   }
 }
+
+/* The form editor always writes left, top, width and height: only !important values apply. */
+.wideButton {
+  width: 400px;
+  height: 30px;
+}
+
+.wideImportant {
+  width: 400px !important;
+}

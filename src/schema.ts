@@ -50,6 +50,13 @@ export const FORBIDDEN_ATTRIBUTES = new Set([
   'requiredList'
 ]);
 
+/**
+ * Coordinates the 4D form editor writes in the form JSON for every object (and `width` for every
+ * listbox column), even after they are removed by hand. A style sheet value for them only applies
+ * when declared `!important`.
+ */
+export const EDITOR_GEOMETRY = new Set(['left', 'top', 'width', 'height']);
+
 /** CSS attribute names accepted by 4D as aliases of 4D attribute names. */
 export const CSS_ALIASES = new Map<string, string>([
   ['border-style', 'borderStyle'],
